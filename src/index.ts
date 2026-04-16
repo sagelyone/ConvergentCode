@@ -1,21 +1,13 @@
-import { registerAgents } from "./agents/index.js"
-import { registerTools } from "./tools/index.js"
-import { registerHooks } from "./hooks/index.js"
-import type { AgentRegistry } from "@opencode/agent"
-import type { ToolDefinition } from "@opencode/tool"
-import type { HookRegistry } from "@opencode/hooks"
+import type { PluginInput, Hooks } from "@opencode-ai/plugin"
+import { allTools } from "./tools/index.js"
+import { createHooks } from "./hooks/index.js"
 
-export default {
-  name: "convergentcode",
-  displayName: "ConvergentCode",
-  version: "0.1.0",
-  setup({ agents, tools, hooks }: { 
-    agents: AgentRegistry
-    tools: { register: (tool: ToolDefinition) => void }
-    hooks: HookRegistry 
-  }) {
-    registerAgents(agents)
-    registerTools(tools)
-    registerHooks(hooks)
+export default async function plugin(input: PluginInput): Promise<Hooks> {
+  const hooks = createHooks()
+
+  return {
+    tool: allTools,
+    "tool.execute.before": hooks["tool.execute.before"],
+    "tool.execute.after": hooks["tool.execute.after"],
   }
 }

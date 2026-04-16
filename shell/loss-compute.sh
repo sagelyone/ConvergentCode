@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TEST_CMD=$(jq -r '.test.command // "go test"' .opencode/config.jsonc 2>/dev/null || echo "go test")
-TEST_UNIT=$(jq -r '.test.unit // "./..."' .opencode/config.jsonc 2>/dev/null || echo "./...")
-TEST_PROP=$(jq -r '.test.property // "-run Prop ./..."' .opencode/config.jsonc 2>/dev/null || echo "-run Prop ./...")
-TEST_ACCEPT=$(jq -r '.test.acceptance // "-run Acceptance ./..."' .opencode/config.jsonc 2>/dev/null || echo "-run Acceptance ./...")
-LINT_CMD=$(jq -r '.test.lint // "true"' .opencode/config.jsonc 2>/dev/null || echo "true")
+TEST_CMD=$(jq -r '.test.command // "go test"' .sdlc/config.json 2>/dev/null || echo "go test")
+TEST_UNIT=$(jq -r '.test.unit // "./..."' .sdlc/config.json 2>/dev/null || echo "./...")
+TEST_PROP=$(jq -r '.test.property // "-run Prop ./..."' .sdlc/config.json 2>/dev/null || echo "-run Prop ./...")
+TEST_ACCEPT=$(jq -r '.test.acceptance // "-run Acceptance ./..."' .sdlc/config.json 2>/dev/null || echo "-run Acceptance ./...")
+LINT_CMD=$(jq -r '.test.lint // "true"' .sdlc/config.json 2>/dev/null || echo "true")
 
 unit_fail=$($TEST_CMD $TEST_UNIT 2>&1 | grep -c '^--- FAIL\|^FAIL' || true)
 prop_fail=$($TEST_CMD $TEST_PROP 2>&1 | grep -c '^--- FAIL\|^FAIL' || true)

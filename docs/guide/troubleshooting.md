@@ -9,18 +9,17 @@ Common issues and their solutions.
 **Symptom:** Commands not available after installation
 
 **Check:**
-1. Is plugin in `.opencode/config.jsonc`?
-   ```jsonc
-    { "plugins": ["convergentcode"] }
-   ```
-
-2. Is config valid JSONC?
+1. Is the plugin file in `.opencode/plugins/convergentcode.js`?
    ```bash
-   # Validate with jq
-   jq . .opencode/config.jsonc
+   ls -la .opencode/plugins/convergentcode.js
    ```
 
-3. Restart OpenCode after config changes
+2. Are the declarative assets in place?
+   ```bash
+   ls .opencode/agents/ .opencode/commands/ .opencode/rules/
+   ```
+
+3. Restart OpenCode after installation
 
 ### Missing state files
 
@@ -306,6 +305,6 @@ export CONVERGENTCODE_DEBUG=1
 Include:
 1. State files (`.sdlc/`)
 2. Agent log (`.sdlc/agent.log`)
-3. Config (`.opencode/config.jsonc`)
+3. Config (`.sdlc/config.json`)
 4. Error messages
 5. Steps to reproduce

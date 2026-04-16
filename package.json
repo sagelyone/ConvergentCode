@@ -28,25 +28,21 @@
     "node": ">=18.0.0"
   },
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "convergentcode": "dist/cli/index.js",
-    "ccode": "dist/cli/index.js"
-  },
   "scripts": {
-    "build": "bun run script/build.ts",
+    "build": "npx tsx script/build.ts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
+    "test": "npx tsx --test tests/integration/plugin.test.ts",
     "test:go": "cd sdlc-tool && go test ./...",
-    "test:integration": "bun test tests/integration/",
-    "test:all": "bun run test && bun run test:go && bun run test:integration"
+    "test:integration": "npx tsx --test tests/integration/",
+    "test:all": "npm run test && npm run test:go && npm run test:integration"
   },
   "dependencies": {
-    "@opencode-ai/sdk": "^1.4.6",
-    "zod": "^3.24"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@opencode-ai/plugin": "latest",
     "@types/bun": "latest",
+    "esbuild": "^0.28.0",
     "typescript": "^5.7"
   },
   "files": [
@@ -55,6 +51,9 @@
     "shell/",
     "templates/",
     "docs/",
-    "sdlc-tool/sdlc-tool-*"
+    "install.sh",
+    "sdlc-tool/*.go",
+    "sdlc-tool/go.mod",
+    "sdlc-tool/go.sum"
   ]
 }

@@ -10,102 +10,104 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
-    
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
-    
+        go-version: '1.22'
+
     - name: Install dependencies
       run: npm ci
-    
+
     - name: Run TypeScript tests
       run: npm run test
-    
+
     - name: Run Go tests
       working-directory: ./sdlc-tool
       run: go test ./...
-    
+
     - name: Type check
       run: npm run typecheck
 
-  build-binaries:
+  build-and-release:
     needs: test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-            arch: arm64
-            target: darwin-arm64
-          - os: macos-latest
-            arch: amd64
-            target: darwin-amd64
-          - os: ubuntu-latest
-            arch: arm64
-            target: linux-arm64
-          - os: ubuntu-latest
-            arch: amd64
-            target: linux-amd64
-          - os: windows-latest
-            arch: amd64
-            target: windows-amd64
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-    
-    - name: Build binary
-      working-directory: ./sdlc-tool
-      run: |
-        GOOS=${{ matrix.target }} GOARCH=${{ matrix.arch }} go build -o ../sdlc-tool-${{ matrix.target }}${{ matrix.target == 'windows-amd64' && '.exe' || '' }}
-      shell: bash
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: sdlc-tool-${{ matrix.target }}
-        path: sdlc-tool-${{ matrix.target }}${{ matrix.target == 'windows-amd64' && '.exe' || '' }}
-
-  create-release:
-    needs: build-binaries
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
       with:
-        path: ./artifacts
-    
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build plugin bundle
+      run: bun run build
+
+    - name: Cross-compile sdlc-tool binaries
+      working-directory: ./sdlc-tool
+      run: |
+        mkdir -p ../dist/sdlc-tool
+        GOOS=linux GOARCH=amd64 go build -o ../dist/sdlc-tool/sdlc-tool-linux-amd64 .
+        GOOS=linux GOARCH=arm64 go build -o ../dist/sdlc-tool/sdlc-tool-linux-arm64 .
+        GOOS=darwin GOARCH=amd64 go build -o ../dist/sdlc-tool/sdlc-tool-darwin-amd64 .
+        GOOS=darwin GOARCH=arm64 go build -o ../dist/sdlc-tool/sdlc-tool-darwin-arm64 .
+        GOOS=windows GOARCH=amd64 go build -o ../dist/sdlc-tool/sdlc-tool-windows-amd64.exe .
+
+    - name: Build release tarball
+      run: |
+        VERSION="${GITHUB_REF_NAME}"
+        STAGING="convergentcode-${VERSION}"
+        mkdir -p "$STAGING"
+
+        cp dist/convergentcode.js "$STAGING/"
+        cp -r .opencode "$STAGING/.opencode"
+        cp -r shell "$STAGING/shell"
+        cp -r templates "$STAGING/templates"
+        cp install.sh "$STAGING/"
+        cp README.md "$STAGING/"
+        cp LICENSE "$STAGING/"
+        cp -r dist/sdlc-tool "$STAGING/sdlc-tool-binaries"
+
+        tar czf "convergentcode-${VERSION}.tar.gz" "$STAGING"
+        rm -rf "$STAGING"
+
     - name: Generate checksums
       run: |
-        cd ./artifacts
-        for dir in */; do
-          mv "${dir}"* ../
-        done
-        cd ..
-        sha256sum sdlc-tool-* > checksums.txt
-    
+        sha256sum convergentcode-*.tar.gz > checksums.txt
+        cd dist/sdlc-tool
+        sha256sum sdlc-tool-* >> ../../checksums.txt
+
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
-          sdlc-tool-*
+          convergentcode-*.tar.gz
           checksums.txt
+          dist/sdlc-tool/sdlc-tool-*
         generate_release_notes: true
         draft: false
         prerelease: false

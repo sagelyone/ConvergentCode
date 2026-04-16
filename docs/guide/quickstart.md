@@ -10,40 +10,24 @@ Get started with ConvergentCode in 5 minutes.
 
 ## Step 1: Install the Plugin
 
-### Option A: One-line paste (recommended)
-
-Copy this to OpenCode:
-
-```
-Install the ConvergentCode plugin from npm. Add the plugin entry to
-my opencode.jsonc config and run the init-project command.
-```
-
-### Option B: Manual
+### Option A: One-line install (recommended)
 
 ```bash
-npm install convergentcode
+curl -fsSL https://raw.githubusercontent.com/sagelyone/ConvergentCode/main/install.sh | bash
 ```
 
-Edit `.opencode/config.jsonc`:
+### Option B: Clone and build
 
-```jsonc
-{
-  "plugins": ["convergentcode"],
-  "harness": "convergentcode",
-  "provider": {
-    "name": "openrouter",
-    "model": "z-ai/glm-5.1"
-  },
-  "test": {
-    "command": "go test",
-    "unit": "./...",
-    "property": "-run Prop ./...",
-    "acceptance": "-run Acceptance ./...",
-    "timeout": "120s"
-  }
-}
+```bash
+git clone https://github.com/sagelyone/ConvergentCode.git
+cd ConvergentCode
+npm install && npm run build
+./install.sh --source . --project /path/to/your/project
 ```
+
+No entry in the `plugins` array of `.opencode/config.json` is needed — OpenCode auto-loads plugins from `.opencode/plugins/`.
+
+ConvergentCode-specific settings go in `.sdlc/config.json` (created by `/init-project`), not in `.opencode/config.jsonc`.
 
 ## Step 2: Initialize Project
 

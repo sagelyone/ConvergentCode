@@ -61,16 +61,32 @@ Each phase has a gate that must clear before advancing. The loss function measur
 ```
 User
   ↓
-OpenCode ←→ Plugin (this repo)
+OpenCode ←→ Plugin (dist/convergentcode.js)
               ↓
          ┌────┴────┐
          ↓         ↓
     Agents     Tools
     (7)        (11)
          ↓         ↓
-    State Files   Shell/Go
-    (.sdlc/)      (sdlc-tool/)
+  State Files    Shell/Go
+  (.sdlc/)    (sdlc-tool/)
 ```
+
+### Plugin internals
+
+```
+src/
+├── index.ts              # export default async (input) => Hooks
+├── config.ts             # reads .sdlc/config.json
+├── types.ts              # Zod v4 schemas + ConvergentConfig type
+├── tools/index.ts        # all 11 tool() definitions
+├── hooks/index.ts        # tool.execute.before / after hooks
+└── features/
+    └── init-project/
+        └── scaffolder.ts # embedded template fallbacks
+```
+
+Config is split: ConvergentCode settings in `.sdlc/config.json`, OpenCode provider/model settings in `.opencode/config.jsonc`.
 
 ## Invariants
 

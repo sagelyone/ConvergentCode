@@ -10,17 +10,17 @@ git clone https://github.com/sagelyone/ConvergentCode.git
 cd ConvergentCode
 
 # Install dependencies
-npm install
+bun install
 
 # Build the Go binary
 cd sdlc-tool && go build -o sdlc-tool . && cd ..
 
 # Run type check
-npm run typecheck
+bun run typecheck
 
 # Run tests
-npm test
-npm run test:go
+bun test
+cd sdlc-tool && go test ./...
 ```
 
 ## Project Structure
@@ -28,22 +28,25 @@ npm run test:go
 ```
 .
 ├── src/               # TypeScript source
-│   ├── agents/        # Agent prompt builders
-│   ├── tools/         # Tool shims
-│   ├── hooks/         # Lifecycle hooks
-│   ├── features/      # Features (init-project, etc.)
-│   ├── cli/           # CLI entry point
-│   ├── config/        # Configuration schema
-│   └── shared/        # Constants and types
+│   ├── index.ts       # Plugin entry point
+│   ├── config.ts      # .sdlc/config.json reader
+│   ├── types.ts       # Zod v4 schemas + shared types
+│   ├── tools/
+│   │   └── index.ts   # All 11 tool definitions
+│   ├── hooks/
+│   │   └── index.ts   # Lifecycle hooks
+│   └── features/
+│       └── init-project/
+│           └── scaffolder.ts
 ├── .opencode/         # OpenCode configuration
-│   ├── agent/         # Agent prompts
-│   ├── command/       # Command definitions
-│   ├── skill/         # Skills
+│   ├── agents/        # Agent prompts
+│   ├── commands/      # Command definitions
+│   ├── skills/        # Skills
 │   └── rules/         # Invariant rules
 ├── sdlc-tool/         # Go binary
 ├── shell/             # Bash tools
 ├── templates/         # State file templates
-├── tests/             # Test suites
+├── tests/
 │   └── integration/   # Integration tests
 ├── docs/              # Documentation
 └── script/            # Build scripts
@@ -53,28 +56,23 @@ npm run test:go
 
 ### Adding a new tool
 
-1. Create shim in `src/tools/<tool-name>.ts`
-2. Export from `src/tools/index.ts`
-3. Add shell script in `shell/<tool-name>.sh` (if needed)
-4. Add Go subcommand in `sdlc-tool/` (if needed)
-5. Write test
-6. Update documentation
+1. Add tool definition in `src/tools/index.ts` using the `tool()` helper from `@opencode-ai/plugin`
+2. Add shell script in `shell/<tool-name>.sh` (if needed)
+3. Add Go subcommand in `sdlc-tool/` (if needed)
+4. Write test
+5. Update documentation
 
 ### Adding a new agent
 
-1. Create prompt in `.opencode/agent/<agent-name>.md`
-2. Create builder in `src/agents/<agent-name>/system-prompt.ts`
-3. Register in `src/agents/index.ts`
-4. Add tool restrictions in `src/agents/tool-restrictions.ts`
-5. Write test
-6. Update AGENTS.md
+1. Create prompt in `.opencode/agents/<agent-name>.md`
+2. Write test
+3. Update AGENTS.md
 
 ### Adding a new command
 
-1. Create definition in `.opencode/command/<command-name>.md`
-2. Implement handler in `src/cli/<command-name>/` (if complex)
-3. Update README.md
-4. Write test
+1. Create definition in `.opencode/commands/<command-name>.md`
+2. Update README.md
+3. Write test
 
 ## Testing
 
@@ -82,7 +80,7 @@ npm run test:go
 
 ```bash
 # TypeScript
-npm test
+bun test
 
 # Go
 cd sdlc-tool && go test ./...
@@ -91,14 +89,14 @@ cd sdlc-tool && go test ./...
 ### Integration Tests
 
 ```bash
-npm run test:integration
+bun test tests/integration/
 ```
 
 ### Manual Testing
 
-1. Build: `npm run build`
-2. Install locally: `npm link`
-3. Test in a fresh project
+1. Build: `bun run build`
+2. Copy: `cp dist/convergentcode.js ~/.opencode/plugins/`
+3. Test in a fresh project with `/init-project`
 
 ## Code Style
 
@@ -152,9 +150,8 @@ git push origin v1.0.0
 
 GitHub Actions will automatically:
 - Build cross-platform Go binaries
-- Create a GitHub Release
-- Generate release notes
-- Attach binaries and checksums
+- Create a GitHub Release with `.tar.gz` bundle
+- Attach binaries, checksums, and plugin assets
 
 ## Questions?
 

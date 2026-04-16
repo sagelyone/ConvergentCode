@@ -4,33 +4,14 @@ Complete reference for ConvergentCode configuration.
 
 ## Config File Location
 
-`.opencode/config.jsonc`
+`.sdlc/config.json`
+
+ConvergentCode-specific settings live in `.sdlc/config.json` (not in `.opencode/config.jsonc`). This file is created automatically by `/init-project`. OpenCode's own settings (provider, model, etc.) go in `.opencode/config.jsonc` as usual.
 
 ## Full Schema
 
 ```jsonc
 {
-  // Required: identifies this as ConvergentCode config
-  "harness": "convergentcode",
-
-  // LLM provider configuration
-  "provider": {
-    "name": "openrouter",           // Provider name
-    "base_url": "https://openrouter.ai/api/v1",
-    "model": "z-ai/glm-5.1"         // Default model for all agents
-  },
-
-  // Per-agent model overrides (optional)
-  "agents": {
-    "convergence-orchestrator": { "model": "z-ai/glm-5.1" },
-    "apit-worker": { "model": "z-ai/glm-5.1" },
-    "spec-writer": { "model": "z-ai/glm-5.1" },
-    "phase-gate-reviewer": { "model": "z-ai/glm-5.1" },
-    "intent-alignment-oracle": { "model": "z-ai/glm-5.1" },
-    "differential-implementer": { "model": "z-ai/glm-5.1" },
-    "spec-gap-detector": { "model": "z-ai/glm-5.1" }
-  },
-
   // Test runner configuration
   "test": {
     "command": "go test",           // Test command
@@ -81,9 +62,12 @@ Complete reference for ConvergentCode configuration.
 
 ## Provider Options
 
+Provider and model settings are configured in OpenCode's own `.opencode/config.jsonc`, not in `.sdlc/config.json`. See OpenCode documentation for provider configuration.
+
 ### OpenRouter (default)
 
 ```jsonc
+// In .opencode/config.jsonc
 {
   "provider": {
     "name": "openrouter",
@@ -96,6 +80,7 @@ Complete reference for ConvergentCode configuration.
 ### OpenAI
 
 ```jsonc
+// In .opencode/config.jsonc
 {
   "provider": {
     "name": "openai",
@@ -108,6 +93,7 @@ Complete reference for ConvergentCode configuration.
 ### Anthropic
 
 ```jsonc
+// In .opencode/config.jsonc
 {
   "provider": {
     "name": "anthropic",
