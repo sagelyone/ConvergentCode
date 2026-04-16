@@ -1,0 +1,227 @@
+# Configuration Guide
+
+Complete reference for ConvergentCode configuration.
+
+## Config File Location
+
+`.opencode/config.jsonc`
+
+## Full Schema
+
+```jsonc
+{
+  // Required: identifies this as ConvergentCode config
+  "harness": "convergentcode",
+
+  // LLM provider configuration
+  "provider": {
+    "name": "openrouter",           // Provider name
+    "base_url": "https://openrouter.ai/api/v1",
+    "model": "z-ai/glm-5.1"         // Default model for all agents
+  },
+
+  // Per-agent model overrides (optional)
+  "agents": {
+    "convergence-orchestrator": { "model": "z-ai/glm-5.1" },
+    "apit-worker": { "model": "z-ai/glm-5.1" },
+    "spec-writer": { "model": "z-ai/glm-5.1" },
+    "phase-gate-reviewer": { "model": "z-ai/glm-5.1" },
+    "intent-alignment-oracle": { "model": "z-ai/glm-5.1" },
+    "differential-implementer": { "model": "z-ai/glm-5.1" },
+    "spec-gap-detector": { "model": "z-ai/glm-5.1" }
+  },
+
+  // Test runner configuration
+  "test": {
+    "command": "go test",           // Test command
+    "unit": "./...",                // Unit test pattern
+    "property": "-run Prop ./...",  // Property test pattern
+    "acceptance": "-run Acceptance ./...",  // Acceptance test pattern
+    "lint": "golangci-lint run --out-format=line-number",  // Lint command
+    "timeout": "120s"               // Test timeout
+  },
+
+  // Escape protocol thresholds
+  "escape": {
+    "L1": 3,   // Rotate strategy after 3 repeated failures
+    "L2": 5,   // Decompose after 5
+    "L3": 7,   // Verify environment after 7
+    "L4": 9    // Block task after 9
+  },
+
+  // Loss function weights
+  "loss_weights": {
+    "acceptance": 100,      // Failing acceptance test
+    "unit": 50,             // Failing unit test
+    "property": 50,         // Failing property test
+    "unimplemented": 25,    // Unimplemented scenario
+    "expectations": 15,     // Uncovered expectation
+    "intents": 10,          // Unconfirmed intent
+    "lint": 5,              // Lint error
+    "blocked": 3,           // Blocked task
+    "spec_gaps": 1          // Spec gap
+  },
+
+  // Development constraints
+  "constraints": {
+    "max_lines": {
+      "scaffold": 120,      // Max lines for new files (Phases 1-2)
+      "modify": 50          // Max lines for modifications (Phases 3-5)
+    },
+    "max_files": 4,         // Max files touched per task
+    "diff_hash_window": 8,  // Window for diff hash collision detection
+    "log_tail": {
+      "worker": 20,         // Lines of agent.log for workers
+      "orchestrator": 50,   // Lines for orchestrator
+      "gate_reviewer": "current_phase"  // Lines for gate reviewer
+    }
+  }
+}
+```
+
+## Provider Options
+
+### OpenRouter (default)
+
+```jsonc
+{
+  "provider": {
+    "name": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "model": "z-ai/glm-5.1"
+  }
+}
+```
+
+### OpenAI
+
+```jsonc
+{
+  "provider": {
+    "name": "openai",
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-4"
+  }
+}
+```
+
+### Anthropic
+
+```jsonc
+{
+  "provider": {
+    "name": "anthropic",
+    "base_url": "https://api.anthropic.com/v1",
+    "model": "claude-3-opus-20240229"
+  }
+}
+```
+
+## Test Configuration by Language
+
+### Go
+
+```jsonc
+{
+  "test": {
+    "command": "go test",
+    "unit": "./...",
+    "property": "-run Prop ./...",
+    "acceptance": "-run Acceptance ./...",
+    "lint": "golangci-lint run",
+    "timeout": "120s"
+  }
+}
+```
+
+### TypeScript/JavaScript
+
+```jsonc
+{
+  "test": {
+    "command": "bun test",
+    "unit": "src/**/*.test.ts",
+    "property": "-t property",
+    "acceptance": "-t acceptance",
+    "lint": "eslint .",
+    "timeout": "60s"
+  }
+}
+```
+
+### Python
+
+```jsonc
+{
+  "test": {
+    "command": "pytest",
+    "unit": "tests/unit",
+    "property": "tests/property",
+    "acceptance": "tests/acceptance",
+    "lint": "flake8",
+    "timeout": "120s"
+  }
+}
+```
+
+## Loss Weights Rationale
+
+Weights reflect severity and fix cost:
+
+- **Acceptance (100)**: Highest - represents user-facing failure
+- **Unit/Property (50)**: High - represents component failure
+- **Unimplemented (25)**: Medium - known missing functionality
+- **Expectations (15)**: Lower - design-level gap
+- **Intents (10)**: Lower - goal-level gap
+- **Lint (5)**: Lowest - style issue
+- **Blocked (3)**: Escalation artifact
+- **Spec gaps (1)**: Informational
+
+## Escape Thresholds
+
+Escape protocol triggers on **repeated failure signatures**, not raw iteration count.
+
+A task that fails 5 times with 5 different signatures is exploring productively.
+A task that fails 3 times with the same signature is stuck.
+
+Adjust thresholds based on:
+- **Lower** (2/4/6/8): Stricter, faster escalation
+- **Higher** (5/7/9/11): More tolerant, more exploration
+
+## Constraints Rationale
+
+### max_lines
+
+- **Scaffold (120)**: New files need structural code (imports, types, setup)
+- **Modify (50)**: Changes should be minimal and attributable
+
+### max_files (4)
+
+Balances:
+- Interface boundary pattern (impl + service + types + one more)
+- Prevents cross-cutting blast radius
+
+### diff_hash_window (8)
+
+Typical subtask cluster: 2-3 tasks × 2-3 iterations each
+
+## Environment Variables
+
+Override config with environment variables:
+
+```bash
+CONVERGENTCODE_PROVIDER_MODEL=z-ai/glm-5.1
+CONVERGENTCODE_TEST_COMMAND="go test"
+CONVERGENTCODE_TEST_TIMEOUT="120s"
+CONVERGENTCODE_ESCAPE_L1=3
+```
+
+## Validation
+
+Config is validated on plugin load. Errors are reported to the agent.
+
+Run validation:
+
+```
+/check-gate
+```
