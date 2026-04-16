@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **APIT Workers now infer from docs instead of asking humans** — when faced with ambiguity, workers read intent.md, expectations.md, and spec.md to infer what a human would decide. Gaps are deferred to spec-gaps.md, not asked about mid-cycle.
+- **L4.5 escape level added** — when a worker truly cannot proceed without human input and cannot defer, it writes a `needs_human_input` blocker with a `**Question:**` field. The Orchestrator proxies the question to the human and re-dispatches the worker with the answer.
+- Blocker template updated with `**Question:**` field and `needs_human_input` resolution option.
+
+### Added
+
+- `init_project` tool — the scaffolder is now a registered plugin tool. Calling `init_project` auto-detects language/test framework, creates all state files and docs templates, and returns detected settings for confirmation. No longer dead code. Tool count is now 13 (was 12 at v0.3.0).
+
 ## [0.3.0] - 2025-04-16
 
 ### Changed
@@ -19,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build process no longer requires Go compiler — single `bun build` step.
 - CI no longer runs Go test matrix or cross-compilation.
 - Release tarball no longer includes platform-specific binaries.
+- **Flattened Phase 0 architecture** — the Convergence Orchestrator now conducts the spec interview directly using the `question` tool instead of delegating to a sub-agent. The `task` tool cannot create interactive sub-sessions in OpenCode.
+- Fixed Loss delta bug — `stateWriteCore` now writes `total=N delta=+N` on a single `**Loss:**` line instead of attempting to write to a non-existent `**Loss delta:**` field.
+- Standardized phase names to CORE_LOGIC (was inconsistently "Core Logic" or "CORE LOGIC").
+- Updated all agent prompts to use the `question` tool for human interaction instead of printing plain text.
+- APIT Workers now dispatched one at a time (sequential, not concurrent) — prevents merge conflicts and state races.
+- Shell script references (`loss-compute.sh`, `failure-sig.sh`) removed from commands and docs — replaced by TypeScript tools.
 
 ### Added
 
@@ -32,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `uninstall.sh` — clean removal of ConvergentCode from a project
 - `--upgrade` flag on `install.sh` — merges new config defaults while preserving existing settings
 - Phase detection on startup — Orchestrator automatically infers project state
+- `/next` command — auto-detects current state and performs the next logical action
+- Auto-detection of language/test-framework in `/init-project` — checks go.mod, package.json, Cargo.toml, pyproject.toml
+- Guided onboarding in `/init-project` — uses `question` tool to confirm detected settings and gather initial intent
+- `question` tool usage in all 7 agent prompts — interactive prompts rendered in OpenCode TUI
+- `**Status:** [ ]` fields in intent.md, expectations.md, spec.md templates — enables loss tracking
+- SMART criteria fields in todo.md template matching state.ts parser format
 
 ### Removed
 
@@ -65,12 +87,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@opencode-ai/sdk` dependency (not needed; `@opencode-ai/plugin` is sufficient)
 - Old consolidated tool file — tools now in individual modules under `src/tools/`
 
-## [0.1.0] - 2024-04-16
+## [0.1.0] - 2025-04-16
 
 ### Added
 
 - Initial release of ConvergentCode
-- 7 SDLC phases: Specification, Architecture, Foundation, Core Logic, Interface, Hardening, Alignment
+- 7 SDLC phases: SPECIFICATION, ARCHITECTURE, FOUNDATION, CORE_LOGIC, INTERFACE, HARDENING, ALIGNMENT
 - 7 specialized agents: Convergence Orchestrator, APIT Worker, Spec Writer, Phase Gate Reviewer, Intent Alignment Oracle, Differential Implementer, Spec Gap Detector
 - Custom tools for state management and testing
 - Escape protocol with 4 escalation levels (L1-L4)

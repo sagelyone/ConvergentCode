@@ -2,14 +2,6 @@
 
 Scaffold the `.sdlc/` state directory for a new project.
 
-## Prerequisites
-
-Before running this command, ensure ConvergentCode is installed:
-- `.opencode/plugins/convergentcode.js` exists (the plugin file)
-- `.opencode/agents/`, `.opencode/commands/`, `.opencode/rules/`, `.opencode/skills/` contain ConvergentCode markdown files
-
-If any prerequisite is missing, follow the installation instructions in the ConvergentCode README first.
-
 ## Usage
 
 ```
@@ -18,67 +10,52 @@ If any prerequisite is missing, follow the installation instructions in the Conv
 
 ## Actions
 
-1. Create `.sdlc/` directory
-2. Create `docs/` directory if not exists
-3. Write `.sdlc/state.md` with Phase 0 initial state
-4. Write `.sdlc/todo.md` with Phase 0 tasks
-5. Write `.sdlc/phases.md` with all phases (Phase 0 ACTIVE, rest LOCKED)
-6. Write `.sdlc/spec-gaps.md` empty
-7. Write `.sdlc/blockers.md` empty
-8. Write `.sdlc/agent.log` as empty file
-9. Write `.sdlc/config.json` with default ConvergentCode configuration (if not already present)
-10. Write `docs/intent.md`, `docs/expectations.md`, `docs/spec.md` with templates
-11. If `intent-seed.md` provided, use it as `docs/intent.md` instead
+1. **Call the `init_project` tool** — this handles everything automatically:
+   - Creates `.sdlc/` and `docs/` directories
+   - Auto-detects language and test framework from project files (go.mod, package.json, Cargo.toml, pyproject.toml)
+   - Writes all state files with correct format
+   - Writes docs templates with default intents (crash resistance, performance, accessibility, error recovery) and expectations
+   - Writes `.sdlc/config.json` with auto-detected settings pre-filled
+   - If `intent-seed.md` is provided, uses it as `docs/intent.md` instead of the template
 
-## Output
+2. **Review the result** — the tool returns `detected_language` and `detected_test_command`. Use the `question` tool to confirm or correct:
 
-- `.sdlc/state.md` - Initialized state (Phase 0, SPECIFICATION)
-- `.sdlc/todo.md` - Phase 0 tasks
-- `.sdlc/phases.md` - All phases locked except 0
-- `.sdlc/spec-gaps.md` - Empty
-- `.sdlc/blockers.md` - Empty
-- `.sdlc/agent.log` - Empty
-- `.sdlc/config.json` - Default configuration (test commands, escape thresholds, loss weights, constraints)
-- `docs/intent.md` - From seed or template
-- `docs/expectations.md` - Template
-- `docs/spec.md` - Template
-
-## Default Config
-
-If `.sdlc/config.json` does not already exist, create it with these defaults:
-
-```json
-{
-  "language": "",
-  "log_level": "minimal",
-  "stale_threshold": 300,
-  "test": {
-    "command": "",
-    "unit": "",
-    "property": "",
-    "acceptance": "",
-    "lint": "true",
-    "build": "",
-    "timeout": "120s"
-  },
-  "escape": { "L1": 3, "L2": 5, "L3": 7, "L4": 9 },
-  "loss_weights": {
-    "acceptance": 100, "unit": 50, "property": 50,
-    "unimplemented": 25, "expectations": 15, "intents": 10,
-    "lint": 5, "blocked": 3, "spec_gaps": 1
-  },
-  "constraints": {
-    "max_lines": { "scaffold": 120, "modify": 50 },
-    "max_files": 4,
-    "diff_hash_window": 8,
-    "log_tail": {
-      "worker": 20,
-      "orchestrator": 50,
-      "gate_reviewer": "current_phase"
-    }
-  }
-}
+```
+question({ questions: [{
+  question: "I detected your project uses [language] with [test_command]. Correct?",
+  header: "Language Detection",
+  options: [
+    { label: "Yes, correct", description: "Use detected settings" },
+    { label: "No, let me specify", description: "I'll provide the correct language and test command" }
+  ]
+}]})
 ```
 
-Set `language` and `test.command` to match your project's language and test framework.
-See `docs/guide/configuration.md` for language-specific examples.
+3. **If the user provided project intent** — begin Phase 0 interview using the `question` tool (see Convergence Orchestrator agent prompt for interview flow).
+
+## What the Tool Creates
+
+| File | Content |
+|---|---|
+| `.sdlc/state.md` | Phase 0 initial state |
+| `.sdlc/todo.md` | Phase 0 tasks with SMART criteria |
+| `.sdlc/phases.md` | All 7 phases (Phase 0 ACTIVE, rest LOCKED) |
+| `.sdlc/spec-gaps.md` | Empty |
+| `.sdlc/blockers.md` | Empty |
+| `.sdlc/agent.log` | Empty |
+| `.sdlc/config.json` | Default config with auto-detected language/test settings |
+| `docs/intent.md` | Template with 4 default intents + optional seed |
+| `docs/expectations.md` | Template with 4 default expectations |
+| `docs/spec.md` | Template with BDD scenario format |
+
+## Auto-Detection
+
+| File Detected | language | test.command |
+|---|---|---|
+| `go.mod` | go | go test |
+| `package.json` with `"vitest"` | typescript | npx vitest run |
+| `package.json` with `"jest"` | typescript | npx jest |
+| `Cargo.toml` | rust | cargo test |
+| `pyproject.toml` with `"pytest"` | python | pytest |
+
+If no markers are found, `language` and `test.command` are left empty for the user to configure.

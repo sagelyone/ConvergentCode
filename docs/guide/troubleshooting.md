@@ -65,9 +65,7 @@ Common issues and their solutions.
    ```
 
 2. Failure signatures being computed:
-   ```bash
-   bash .sdlc/tools/failure-sig.sh "task-id" "error output"
-   ```
+    Use the `failure_sig` tool with the task ID and error output
 
 ## State Issues
 
@@ -222,22 +220,14 @@ Increase L1 threshold:
 
 ## Lock Issues
 
-### File locked errors
+### Write queue errors
 
-**Symptom:** "Resource temporarily unavailable"
+**Symptom:** State updates not applying or appearing delayed
 
 **Solution:**
-1. Check for zombie processes:
-   ```bash
-   ps aux | grep sdlc
-   ```
-
-2. Clear stale locks:
-   ```bash
-   rm -f .sdlc/*.lock
-   ```
-
-3. Restart OpenCode
+1. The plugin uses an in-process write queue — state writes are serialized automatically
+2. If running multiple OpenCode instances against the same project, state files may conflict. Run one instance at a time per project
+3. Restart OpenCode if the write queue appears stuck
 
 ### Concurrent modification
 
@@ -245,8 +235,8 @@ Increase L1 threshold:
 
 **Solution:**
 1. Reduce concurrency:
-   - Max 3 concurrent APIT workers
-   - Consider sequential execution for debugging
+    - Max 1 APIT worker at a time (sequential execution)
+    - The plugin uses in-process write serialization — state writes are queued sequentially
 
 2. The plugin uses in-process write serialization — state writes are queued sequentially. If running multiple OpenCode instances against the same project, state files may conflict. Run one instance at a time per project.
 
@@ -289,10 +279,16 @@ Increase L1 threshold:
 
 ### Debug mode
 
-Enable verbose logging:
+Enable verbose logging in `.sdlc/config.json`:
 
-```bash
-export CONVERGENTCODE_DEBUG=1
+```jsonc
+{ "log_level": "verbose" }
+```
+
+Or for full debug output:
+
+```jsonc
+{ "log_level": "debug" }
 ```
 
 ### Check system health

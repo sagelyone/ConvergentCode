@@ -16,8 +16,8 @@ Fixes # (issue number)
 ## Testing
 
 - [ ] TypeScript tests pass: `npm run test`
-- [ ] Go tests pass: `npm run test:go`
 - [ ] Integration tests pass: `npm run test:integration`
+- [ ] Type checking passes: `npm run typecheck`
 - [ ] Type checking passes: `npm run typecheck`
 - [ ] Build succeeds: `npm run build`
 
@@ -37,7 +37,7 @@ Which phase(s) does this affect?
 - [ ] Phase 0: Specification
 - [ ] Phase 1: Architecture
 - [ ] Phase 2: Foundation
-- [ ] Phase 3: Core Logic
+- [ ] Phase 3: CORE_LOGIC
 - [ ] Phase 4: Interface
 - [ ] Phase 5: Hardening
 - [ ] Phase 6: Alignment

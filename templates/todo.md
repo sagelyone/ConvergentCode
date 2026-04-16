@@ -1,6 +1,6 @@
 # Task List — Phase 0: SPECIFICATION
 
-### P0-001 Draft intent statements
+### P0-001: Draft intent statements [ACTIVE]
 - **S:** Elicit goals from stakeholder. Produce docs/intent.md.
 - **M:** intent.md with ≥ 1 intent, each with Goal/Motivation/Success.
 - **A:** Conversational.
@@ -13,7 +13,7 @@
 - **Iteration count:** 0
 - **Failure signatures:** []
 
-### P0-002 Draft expectations
+### P0-002: Draft expectations [ ]
 - **S:** Derive invariants from intents. Produce docs/expectations.md.
 - **M:** Each expectation references ≥ 1 intent.
 - **A:** Conversational.
@@ -26,7 +26,7 @@
 - **Iteration count:** 0
 - **Failure signatures:** []
 
-### P0-003 Draft BDD scenarios
+### P0-003: Draft BDD scenarios [ ]
 - **S:** Write Given/When/Then scenarios. Produce docs/spec.md.
 - **M:** Every scenario has example table; traceability complete.
 - **A:** Conversational.
@@ -39,7 +39,7 @@
 - **Iteration count:** 0
 - **Failure signatures:** []
 
-### P0-004 Consistency check
+### P0-004: Consistency check [ ]
 - **S:** Check spec.md for collisions and traceability gaps.
 - **M:** No Given/When collisions. No untraceable scenarios.
 - **A:** Automated.

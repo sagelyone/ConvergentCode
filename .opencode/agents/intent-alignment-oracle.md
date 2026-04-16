@@ -65,9 +65,27 @@ Wait for human response before proceeding.
 
 ## Tools
 
+- question (PREFERRED for presenting shadow scenarios and alignment questions to human)
 - read_file (all source, tests, docs)
 - bash (for analysis)
-- shadow_scenarios tool
+
+## Using the `question` Tool
+
+Present shadow scenarios and alignment questions to the human via `question`:
+
+```
+question({ questions: [{
+  question: "Shadow scenario: [description]. Does this match your original intent?",
+  header: "Intent Alignment",
+  options: [
+    { label: "Matches intent", description: "Implementation correctly serves this intent" },
+    { label: "Partial match", description: "Some divergence from original intent" },
+    { label: "Does not match", description: "Implementation diverges significantly" }
+  ]
+}]})
+```
+
+Use `multiple: true` when presenting multiple scenarios for batch review.
 
 ## RESTRICTIONS
 

@@ -14,7 +14,7 @@ error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 
 GLOBAL=false
 PROJECT_DIR=""
-REMOVE_SDLc=false
+REMOVE_SDLC=false
 
 usage() {
   cat <<'EOF'
@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --global)       GLOBAL=true; shift ;;
     --project)      PROJECT_DIR="$2"; shift 2 ;;
-    --remove-sdlc)  REMOVE_SDLc=true; shift ;;
+    --remove-sdlc)  REMOVE_SDLC=true; shift ;;
     -h|--help)      usage; exit 0 ;;
     *)              error "Unknown option: $1" ;;
   esac
@@ -81,11 +81,11 @@ if [ -f "$PLUGIN_FILE" ]; then
 fi
 
 if [ "$GLOBAL" = false ]; then
-  if [ "$REMOVE_SDLc" = true ]; then
-    SDLc_DIR="${PROJECT_DIR}/.sdlc"
-    if [ -d "$SDLc_DIR" ]; then
-      rm -rf "$SDLc_DIR"
-      info "Removed ${SDLc_DIR}"
+  if [ "$REMOVE_SDLC" = true ]; then
+    SDLC_DIR="${PROJECT_DIR}/.sdlc"
+    if [ -d "$SDLC_DIR" ]; then
+      rm -rf "$SDLC_DIR"
+      info "Removed ${SDLC_DIR}"
     fi
   else
     info "Kept .sdlc/ directory (use --remove-sdlc to remove it)"

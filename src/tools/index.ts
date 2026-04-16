@@ -4,6 +4,7 @@ import { stateWriteCore, todoUpdateCore, gateCheckCore, phaseAdvanceCore } from 
 import { commitGreenCore, rollbackCore } from "./git.js"
 import { failureSigCore, diffHashCore, scenarioMatrixCore, assertionDensityCore } from "./analysis.js"
 import { logEmitCore } from "./logging.js"
+import { initProject } from "../features/init-project/scaffolder.js"
 
 const z = tool.schema
 
@@ -181,6 +182,37 @@ export const assertionDensity = tool({
   },
 })
 
+export const initProjectTool = tool({
+  description: "Scaffold .sdlc/ state directory with auto-detected language and test framework. Creates all state files, docs templates with default intents/expectations, and config.json. Returns detected language and test command for confirmation.",
+  args: {
+    seed_file: z.string().optional().describe("Optional path to intent seed file (replaces default intent.md template)"),
+  },
+  execute: async ({ seed_file }, ctx) => {
+    try {
+      const result = await initProject(seed_file)
+      return JSON.stringify({
+        status: "initialized",
+        detected_language: result.detectedLanguage,
+        detected_test_command: result.detectedTestCommand,
+        files_created: [
+          ".sdlc/state.md",
+          ".sdlc/todo.md",
+          ".sdlc/phases.md",
+          ".sdlc/spec-gaps.md",
+          ".sdlc/blockers.md",
+          ".sdlc/agent.log",
+          ".sdlc/config.json",
+          "docs/intent.md",
+          "docs/expectations.md",
+          "docs/spec.md",
+        ],
+      })
+    } catch (err) {
+      return `Error initializing project: ${err instanceof Error ? err.message : String(err)}`
+    }
+  },
+})
+
 export const allTools = {
   loss_compute: lossCompute,
   failure_sig: failureSig,
@@ -194,4 +226,5 @@ export const allTools = {
   rollback: rollback,
   scenario_matrix: scenarioMatrix,
   assertion_density: assertionDensity,
+  init_project: initProjectTool,
 }

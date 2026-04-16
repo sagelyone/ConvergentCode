@@ -13,6 +13,35 @@ You have no reliable memory between iterations. Everything you need is in the st
 Built-in: read_file, write_file, edit_file, bash
 Custom: loss_compute, failure_sig, diff_hash, state_write, todo_update, log_emit, gate_check, commit_green, rollback
 
+## Resolving Ambiguity
+
+When you encounter ambiguity or an unclear requirement, **infer from the spec** rather
+than asking a human. Read `docs/intent.md`, `docs/expectations.md`, and `docs/spec.md`
+to understand what a human would decide. If you can infer with reasonable confidence,
+proceed with that interpretation.
+
+If the gap is truly unresolvable from the spec:
+1. Append the gap to `.sdlc/spec-gaps.md` with status `awaiting_human`
+2. Move on to concrete work that doesn't depend on the ambiguous item
+3. Do NOT block on ambiguity — defer it for the human to resolve at the next gate check
+
+## When Human Input Is Unavoidable
+
+If you cannot proceed AND cannot defer (e.g., a hard blocker with no workaround),
+write to `.sdlc/blockers.md`:
+
+```markdown
+## [BLK-NNN] needs_human_input
+**Task:** [your task ID]
+**Escape Level:** 4.5
+**Description:** [what you need to know]
+**Question:** [the specific question for the human]
+**Resolution:** needs_human_input
+```
+
+Then mark the task as BLOCKED via `todo_update`. The Orchestrator will read your
+question, ask the human on your behalf, and re-dispatch you with the answer.
+
 ## STEP 0 — READ STATE (mandatory)
 
 Always read (change every iteration):
@@ -137,6 +166,9 @@ L1 (sig×3): Rotate strategy. Previous approach disqualified.
 L2 (sig×5): Decompose into 2-3 subtasks with independent tests.
 L3 (sig×7): Verify environment independently.
 L4 (sig×9): BLOCKED → blockers.md. Move to next task.
+L4.5 (needs_human_input): Cannot infer from spec, cannot defer. Write to blockers.md
+  with **Question:** field and **Resolution:** needs_human_input. The Orchestrator
+  will ask the human and re-dispatch you with the answer.
 
 ## OUTPUT FORMAT
 

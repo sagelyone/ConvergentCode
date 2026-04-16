@@ -34,12 +34,13 @@ describe("plugin entry point", () => {
 describe("tool definitions", () => {
   const toolNames = Object.keys(allTools)
 
-  it("should register all 12 tools", () => {
-    expect(toolNames.length).toBe(12)
+  it("should register all 13 tools", () => {
+    expect(toolNames.length).toBe(13)
   })
 
   it("should have the expected tool names", () => {
     const expected = [
+      "init_project",
       "loss_compute",
       "failure_sig",
       "diff_hash",

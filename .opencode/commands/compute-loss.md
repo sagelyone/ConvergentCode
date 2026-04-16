@@ -10,7 +10,7 @@ Compute and display current loss by component.
 
 ## Actions
 
-1. Run loss-compute.sh
+1. Run the `loss_compute` tool
 2. Parse results
 3. Display breakdown
 

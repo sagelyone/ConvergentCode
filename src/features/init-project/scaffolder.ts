@@ -1,15 +1,352 @@
-import { mkdir, readFile, writeFile, access, copyFile, stat } from "fs/promises"
+import { mkdir, readFile, writeFile, access, stat } from "fs/promises"
 import { join, resolve } from "path"
 
+interface DetectedConfig {
+  language?: string
+  test?: {
+    command: string
+    unit: string
+    property: string
+    acceptance: string
+    lint: string
+    build: string
+    timeout: string
+  }
+}
+
 const EMBEDDED_TEMPLATES: Record<string, string> = {
-  "state.md": `# State\n\n**Phase:** 0 — SPECIFICATION\n**Active task:** P0-001\n**Iteration:** task=1 phase=1 global=1\n**Loss:** total=0 delta=0\n**Last action:** init\n**Last test:** none\n**Failure signature:** none\n**Escape status:** clear\n**Next action:** Elicit requirements from human\n`,
-  "todo.md": `# Todo\n\n## Phase 0 — SPECIFICATION\n\n### P0-001: Elicit stakeholder intents [ACTIVE]\n- [ ] Define project goals and success criteria\n- [ ] Document stakeholder expectations\n- [ ] Create BDD scenarios\n`,
-  "phases.md": `# Phases\n\n## Phase 0 — SPECIFICATION [ACTIVE]\n- [ ] All intents documented\n- [ ] All expectations mapped to intents\n- [ ] All scenarios have example tables\n- [ ] Consistency check passes\n- [ ] No unresolved ambiguities\n\n## Phase 1 — ARCHITECTURE [LOCKED]\n- [ ] Acceptance test paths identified\n- [ ] Properties defined\n- [ ] Module boundaries established\n- [ ] Dependency graph documented\n- [ ] Architecture review complete\n\n## Phase 2 — FOUNDATION [LOCKED]\n- [ ] Data models implemented\n- [ ] Unit tests for data layer\n- [ ] Property tests for invariants\n- [ ] No test failures\n\n## Phase 3 — CORE_LOGIC [LOCKED]\n- [ ] Business logic implemented\n- [ ] Unit tests pass\n- [ ] Property tests pass\n- [ ] No UI dependency\n\n## Phase 4 — INTERFACE [LOCKED]\n- [ ] Integration tests pass\n- [ ] Differential check complete\n- [ ] API contracts verified\n\n## Phase 5 — HARDENING [LOCKED]\n- [ ] All tests green\n- [ ] Coverage threshold met\n- [ ] No lint errors\n- [ ] No spec gaps\n\n## Phase 6 — ALIGNMENT [LOCKED]\n- [ ] All intents confirmed by human\n- [ ] Loss = 0\n`,
-  "spec-gaps.md": `# Spec Gaps\n\n(No gaps detected yet)\n`,
-  "blockers.md": `# Blockers\n\n(No blockers yet)\n`,
-  "expectations.md": `# Expectations\n\n(To be defined during Phase 0)\n`,
-  "spec.md": `# Specification\n\n(To be defined during Phase 0)\n`,
-  "intent.md": `# Intent\n\n(To be defined during Phase 0)\n`,
+  "state.md": `# State
+
+**Phase:** 0 — SPECIFICATION
+**Active task:** P0-001
+**Iteration:** task=0 phase=0 global=0
+**Loss:** total=0 delta=0
+**Last action:** Project initialized
+**Last test:** none
+**Failure signature:** none
+**Escape status:** clear
+**Next action:** Begin specification elicitation
+`,
+
+  "todo.md": `# Task List — Phase 0: SPECIFICATION
+
+### P0-001: Draft intent statements [ACTIVE]
+- **S:** Elicit goals from stakeholder. Produce docs/intent.md.
+- **M:** intent.md with ≥ 1 intent, each with Goal/Motivation/Success.
+- **A:** Conversational.
+- **R:** Ground truth for the system.
+- **T:** Human-paced.
+- **Type:** task
+- **Depends on:** none
+- **Scenarios:** []
+- **Repro:**
+- **Iteration count:** 0
+- **Failure signatures:** []
+
+### P0-002: Draft expectations [ ]
+- **S:** Derive invariants from intents. Produce docs/expectations.md.
+- **M:** Each expectation references ≥ 1 intent.
+- **A:** Conversational.
+- **R:** EXP-001+ trace to INT-001+.
+- **T:** Human-paced.
+- **Type:** task
+- **Depends on:** P0-001
+- **Scenarios:** []
+- **Repro:**
+- **Iteration count:** 0
+- **Failure signatures:** []
+
+### P0-003: Draft BDD scenarios [ ]
+- **S:** Write Given/When/Then scenarios. Produce docs/spec.md.
+- **M:** Every scenario has example table; traceability complete.
+- **A:** Conversational.
+- **R:** Scenarios trace to expectations and intents.
+- **T:** Human-paced.
+- **Type:** task
+- **Depends on:** P0-002
+- **Scenarios:** []
+- **Repro:**
+- **Iteration count:** 0
+- **Failure signatures:** []
+
+### P0-004: Consistency check [ ]
+- **S:** Check spec.md for collisions and traceability gaps.
+- **M:** No Given/When collisions. No untraceable scenarios.
+- **A:** Automated.
+- **R:** Phase 0 gate condition.
+- **T:** L1 at sig×3 · L2 at sig×5 · L3 at sig×7 · BLOCKED at sig×9.
+- **Type:** task
+- **Depends on:** P0-003
+- **Scenarios:** []
+- **Repro:**
+- **Iteration count:** 0
+- **Failure signatures:** []
+
+## Blocked Tasks
+## Completed Tasks
+`,
+
+  "phases.md": `# Phase Gate Tracker
+
+## Phase 0 — SPECIFICATION [ACTIVE]
+- [ ] All intents documented
+- [ ] All expectations mapped to intents
+- [ ] All scenarios have example tables
+- [ ] Consistency check passes
+- [ ] No unresolved ambiguities
+
+## Phase 1 — ARCHITECTURE [LOCKED]
+- [ ] All acceptance tests have plausible implementation path
+- [ ] Property test candidates identified for all expectations
+- [ ] No circular dependencies
+
+## Phase 2 — FOUNDATION [LOCKED]
+- [ ] Data layer unit tests green
+- [ ] Data invariant property tests green
+- [ ] No external service calls from data layer
+
+## Phase 3 — CORE_LOGIC [LOCKED]
+- [ ] Business logic unit and property tests green
+- [ ] No UI dependency in logic layer
+
+## Phase 4 — INTERFACE [LOCKED]
+- [ ] Integration tests green
+- [ ] Differential implementation check complete
+- [ ] All ambiguities resolved
+
+## Phase 5 — HARDENING [LOCKED]
+- [ ] All acceptance tests green
+- [ ] All property tests green
+- [ ] Coverage ≥ threshold
+- [ ] Scenario matrix complete
+
+## Phase 6 — ALIGNMENT [LOCKED]
+- [ ] All intents confirmed by human oracle
+- [ ] All shadow scenarios reviewed
+- [ ] All spec-gaps resolved or excluded
+`,
+
+  "spec-gaps.md": `# Specification Gaps
+
+Detected gaps in specification adequacy. Each entry follows the format:
+
+## [GAP-001] awaiting_human
+**Detected:** [ISO 8601 timestamp]
+**Status:** awaiting_human
+**Description:** [Description of the gap]
+**Suggested resolution:** [Concrete suggestion for human]
+
+---
+
+*This file is written by agents, status changed by humans only.*
+`,
+
+  "blockers.md": `# Blockers
+
+Active blockers preventing task completion. Escalation protocol engaged.
+
+## [BLK-001] L4 Escape
+**Task:** P0-001
+**Escape Level:** 4
+**Description:** [Description of blocker]
+**Question:** [Question for human, if needs_human_input]
+**Created:** [ISO 8601 timestamp]
+**Resolution:** [None | Moved to next task | Human intervention required | needs_human_input]
+
+---
+
+*L4 escapes automatically create entries here.*
+`,
+
+  "intent.md": `# Intent
+
+## INT-001 [ ] - [Title]
+
+**Goal:** [What the system should achieve]
+
+**Motivation:** [Why this matters]
+
+**Success Criteria:**
+- [Criterion 1]
+- [Criterion 2]
+
+**Priority:** [Critical/High/Medium/Low]
+
+**Source:** [Human conversation / Document / Derived]
+
+**Status:** [ ]
+
+---
+
+## INT-DEF-01 [ ] - Crash Resistance
+
+**Goal:** No sequence of inputs or events causes the application to panic,
+crash, or exit unexpectedly.
+
+**Motivation:** A crashed application erases user work and breaks trust.
+
+**Success Criteria:**
+- No panic under any input sequence
+- No unhandled errors that terminate the process
+- Fuzz testing produces zero crashes
+
+**Priority:** High
+**Source:** ConvergentCode default
+**Status:** [ ]
+
+---
+
+## INT-DEF-02 [ ] - Performance
+
+**Goal:** Operations complete within acceptable time bounds.
+
+**Motivation:** Unresponsive software is unusable software.
+
+**Success Criteria:**
+- User-facing operations complete within [configurable]ms
+- No memory leaks under sustained use
+
+**Priority:** Medium
+**Source:** ConvergentCode default
+**Status:** [ ]
+
+---
+
+## INT-DEF-03 [ ] - Accessibility
+
+**Goal:** All functionality is accessible via both keyboard and pointer
+input when the platform supports both.
+
+**Motivation:** Users have different interaction preferences and abilities.
+
+**Success Criteria:**
+- Every action achievable via keyboard has an equivalent pointer path
+- Every action achievable via pointer has an equivalent keyboard path
+
+**Priority:** Medium
+**Source:** ConvergentCode default
+**Status:** [ ]
+
+---
+
+## INT-DEF-04 [ ] - Error Recovery
+
+**Goal:** Error states are recoverable without data loss.
+
+**Motivation:** Errors happen. Users should be able to continue working.
+
+**Success Criteria:**
+- Every error state has a documented recovery path
+- Recovery preserves all data entered before the error
+- Clear error messages explain what went wrong
+
+**Priority:** High
+**Source:** ConvergentCode default
+**Status:** [ ]
+
+---
+
+*This file is sealed after Phase 0. Changes require human approval.*
+`,
+
+  "expectations.md": `# Expectations
+
+## EXP-001 - [Title]
+**Traces to:** INT-001
+**Status:** none — needs implementation
+
+**Invariant:** [What must always be true]
+
+**Preconditions:** [When this applies]
+
+**Postconditions:** [What must hold after]
+
+**Property Test Candidate:** [Yes/No - if yes, describe property]
+
+---
+
+## EXP-DEF-01 - No Crash Under Any Input
+**Traces to:** INT-DEF-01
+**Status:** none — needs implementation
+
+**Invariant:** No sequence of valid or invalid inputs causes the
+application to panic, crash, or exit unexpectedly.
+
+**Property Test Candidate:** Yes — fuzz with random input sequences,
+assert no panics.
+
+---
+
+## EXP-DEF-02 - Operations Complete in Bounded Time
+**Traces to:** INT-DEF-02
+**Status:** none — needs implementation
+
+**Invariant:** Every user-facing operation completes within the
+configured time bound.
+
+**Property Test Candidate:** Yes — measure operation duration,
+assert under threshold.
+
+---
+
+## EXP-DEF-03 - Keyboard and Pointer Parity
+**Traces to:** INT-DEF-03
+**Status:** none — needs implementation
+
+**Invariant:** For every action, keyboard input and pointer input
+produce identical state changes.
+
+**Property Test Candidate:** Yes — stateAfter(keyboard(action)) ==
+stateAfter(pointer(action)).
+
+---
+
+## EXP-DEF-04 - Error States Are Recoverable
+**Traces to:** INT-DEF-04
+**Status:** none — needs implementation
+
+**Invariant:** After any error state, a clear/recovery action returns
+the application to a working state without data loss.
+
+**Property Test Candidate:** Yes — enter error state, recover,
+assert working state and data preserved.
+
+---
+
+*Expectations are derived from intents. Each must trace to ≥1 intent.*
+`,
+
+  "spec.md": `# Specification
+
+## Feature: [Feature Name]
+
+### Background
+Given [context]
+And [more context]
+
+### Scenario: [Scenario ID] - [Title]
+**Traces to:** EXP-001, INT-001
+**Status:** [ ] unimplemented | [x] implemented
+
+**Given** [precondition]
+**And** [more preconditions]
+
+**When** [action/event]
+**And** [more actions]
+
+**Then** [expected outcome]
+**And** [more outcomes]
+
+**Examples:**
+| Field1 | Field2 | Expected |
+|--------|--------|----------|
+| val1   | val2   | result   |
+
+---
+
+*Specifications are immutable after Phase 0. Gaps go to .sdlc/spec-gaps.md*
+`,
+
   "sdlc-config.json": JSON.stringify({
     language: "",
     log_level: "minimal",
@@ -39,6 +376,79 @@ const EMBEDDED_TEMPLATES: Record<string, string> = {
   }, null, 2),
 }
 
+const LANGUAGE_DETECTORS: Array<{
+  file: string
+  language: string
+  testCommand: string
+  testUnit: string
+  testBuild: string
+  detect?: (content: string) => boolean
+}> = [
+  {
+    file: "go.mod",
+    language: "go",
+    testCommand: "go test",
+    testUnit: "./...",
+    testBuild: "go build ./...",
+  },
+  {
+    file: "package.json",
+    language: "typescript",
+    testCommand: "npx vitest run",
+    testUnit: "--reporter=verbose",
+    testBuild: "npx tsc --noEmit",
+    detect: (content: string) => content.includes('"vitest"'),
+  },
+  {
+    file: "package.json",
+    language: "typescript",
+    testCommand: "npx jest",
+    testUnit: "--verbose",
+    testBuild: "npx tsc --noEmit",
+    detect: (content: string) => content.includes('"jest"') && !content.includes('"vitest"'),
+  },
+  {
+    file: "Cargo.toml",
+    language: "rust",
+    testCommand: "cargo test",
+    testUnit: "",
+    testBuild: "cargo build",
+  },
+  {
+    file: "pyproject.toml",
+    language: "python",
+    testCommand: "pytest",
+    testUnit: "-v",
+    testBuild: "",
+    detect: (content: string) => content.includes("pytest"),
+  },
+]
+
+async function detectLanguage(projectDir: string): Promise<DetectedConfig> {
+  for (const detector of LANGUAGE_DETECTORS) {
+    try {
+      const filePath = join(projectDir, detector.file)
+      const content = await readFile(filePath, "utf-8")
+      if (detector.detect && !detector.detect(content)) continue
+      return {
+        language: detector.language,
+        test: {
+          command: detector.testCommand,
+          unit: detector.testUnit,
+          property: "",
+          acceptance: "",
+          lint: "true",
+          build: detector.testBuild,
+          timeout: "120s",
+        },
+      }
+    } catch {
+      continue
+    }
+  }
+  return {}
+}
+
 async function findTemplatesDir(projectDir: string): Promise<string | null> {
   const candidates = [
     join(projectDir, "templates"),
@@ -65,9 +475,13 @@ async function getTemplate(name: string, templatesDir: string | null): Promise<s
   throw new Error(`Template not found: ${name}`)
 }
 
-export async function initProject(seedFile?: string): Promise<void> {
+export async function initProject(seedFile?: string): Promise<{
+  detectedLanguage: string
+  detectedTestCommand: string
+}> {
   const projectDir = process.cwd()
   const templatesDir = await findTemplatesDir(projectDir)
+  const detected = await detectLanguage(projectDir)
 
   try {
     await mkdir(join(projectDir, ".sdlc"), { recursive: true })
@@ -106,7 +520,15 @@ export async function initProject(seedFile?: string): Promise<void> {
     try {
       await access(configDest)
     } catch {
-      const configContent = await getTemplate("sdlc-config.json", templatesDir)
+      let configContent = await getTemplate("sdlc-config.json", templatesDir)
+      if (detected.language || detected.test) {
+        try {
+          const config = JSON.parse(configContent)
+          if (detected.language) config.language = detected.language
+          if (detected.test) Object.assign(config.test, detected.test)
+          configContent = JSON.stringify(config, null, 2)
+        } catch { /* use template as-is */ }
+      }
       await writeFile(configDest, configContent)
     }
   } catch (err) {
@@ -128,5 +550,10 @@ export async function initProject(seedFile?: string): Promise<void> {
     } catch (err) {
       throw new Error(`Failed to write intent.md: ${err}`)
     }
+  }
+
+  return {
+    detectedLanguage: detected.language ?? "",
+    detectedTestCommand: detected.test?.command ?? "",
   }
 }

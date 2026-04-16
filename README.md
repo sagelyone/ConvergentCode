@@ -11,8 +11,8 @@ Convergence-driven autonomous development harness for OpenCode.
 ConvergentCode brings structured, phase-gated, loss-driven software development to OpenCode. It includes:
 
 - **7 specialized agents** for different SDLC phases
-- **12 custom tools** for state management and testing
-- **6 commands** for project initialization and control
+- **13 custom tools** for state management, testing, and project scaffolding
+- **7 commands** for project initialization and control
 - **Escape protocol** for handling stuck situations
 - **Immutable ground truth** for specification integrity
 
@@ -23,7 +23,7 @@ ConvergentCode is a pure TypeScript plugin for OpenCode. No external binaries or
 | Component | Required? | What breaks without it |
 |---|---|---|
 | `.opencode/agents/`, `commands/`, `rules/`, `skills/` | **Required** | No agents or commands appear in OpenCode |
-| `.opencode/plugins/convergentcode.js` | **Required** | The 12 custom tools (loss_compute, gate_check, etc.) are unavailable |
+| `.opencode/plugins/convergentcode.js` | **Required** | The 13 custom tools (loss_compute, gate_check, init_project, etc.) are unavailable |
 
 **Nothing goes in the `plugins` array of `.opencode/config.json`.** OpenCode auto-loads files from `.opencode/plugins/` and the declarative asset directories.
 
@@ -42,7 +42,7 @@ npm run build                          # produces dist/convergentcode.js
 
 ### Option 2: Manual asset copy (no build tools needed)
 
-If you don't have Node.js/Bun, you can deploy just the declarative assets. You will get the 7 agents and 6 commands, but the 12 tools will be unavailable.
+If you don't have Node.js/Bun, you can deploy just the declarative assets. You will get the 7 agents and 7 commands, but the 13 tools will be unavailable.
 
 ```bash
 CC=/path/to/ConvergentCode
@@ -57,8 +57,7 @@ cp -r $CC/.opencode/skills/*   "$PROJ/.opencode/skills/"
 ```
 
 **Limitations of manual copy only:**
-- The 12 tools (`loss_compute`, `gate_check`, etc.) will not be registered — no automated loss tracking or escape protocol
-- You must manually manage state files and phase transitions
+- The 13 tools (`loss_compute`, `gate_check`, `init_project`, etc.) will not be registered — no automated loss tracking, escape protocol, or auto-detection
 - To add tools later, build the plugin (`npm run build`) and copy `dist/convergentcode.js` to `.opencode/plugins/`
 
 ### Option 3: `install.sh` (requires published GitHub Release)
@@ -113,25 +112,29 @@ This removes agents, commands, rules, skills, the plugin, and templates. Your `d
 1. **Install ConvergentCode** (see Installation above)
 
 2. **Initialize a new project**
-   ```
-   /init-project
-   ```
-   Review `.sdlc/config.json` and set `language`, `test.command`, and `test.build` for your project.
+    ```
+    /init-project
+    ```
+    The `init_project` tool auto-detects your language and test framework,
+    creates all state files and docs templates with default intents, then
+    asks you to confirm the detected settings.
 
 3. **Run Phase 0: Specification** (human-interactive)
-   ```
-   /run-phase 0
-   ```
-   Work with the Spec Writer agent to define intents, expectations, and BDD scenarios.
+    ```
+    /next
+    ```
+    The Convergence Orchestrator will interview you directly using interactive
+    questions to define intents, expectations, and BDD scenarios.
 
 4. **Run subsequent phases** (autonomous)
-   ```
-   /run-phase 1  # Architecture
-   /run-phase 2  # Foundation
-   /run-phase 3  # Core Logic
-   /run-phase 4  # Interface
-   /run-phase 5  # Hardening
-   ```
+    ```
+    /next              # Continues from wherever you left off
+    /run-phase 1       # Or target a specific phase: Architecture
+    /run-phase 2       # Foundation
+    /run-phase 3       # CORE_LOGIC
+    /run-phase 4       # Interface
+    /run-phase 5       # Hardening
+    ```
 
 5. **Phase 6: Alignment** (human review)
    ```
@@ -159,29 +162,31 @@ This removes agents, commands, rules, skills, the plugin, and templates. Your `d
 
 | Agent | Role | Writes Code? |
 |-------|------|--------------|
-| `convergence-orchestrator` | Reads state, dispatches work, manages phases | No |
+| `convergence-orchestrator` | Reads state, dispatches work, manages phases, conducts Phase 0 interview | No (docs in Phase 0) |
 | `apit-worker` | Executes one Analyze→Plan→Implement→Test cycle | Yes |
-| `spec-writer` | Phase 0 specification elicitation with human | No |
+| `spec-writer` | Phase 0 specification reference agent | No |
 | `phase-gate-reviewer` | Middle loop quality checks at phase boundaries | No |
 | `intent-alignment-oracle` | Outer loop shadow scenario generation | No |
 | `differential-implementer` | Phase 4 ambiguity detection (spec-only) | Yes (sandboxed) |
 | `spec-gap-detector` | Continuous specification adequacy monitoring | No |
 
-## The 6 Commands
+## The 7 Commands
 
 | Command | Description |
 |---------|-------------|
-| `/init-project` | Scaffold .sdlc/ state directory |
+| `/init-project` | Scaffold .sdlc/ state directory (with auto-detection and guided onboarding) |
+| `/next` | Do whatever comes next based on current state (primary driving command) |
 | `/run-phase` | Execute APIT loop until phase gate clears |
 | `/check-gate` | Run middle loop checks without advancing |
 | `/review-intent` | Trigger outer loop human oracle |
 | `/compute-loss` | Report current loss by component |
-| `/convergence-status` | Loss trajectory and escape event frequency |
+| `/convergence-status` | Current status, loss trajectory, and escape event frequency |
 
-## The 12 Tools
+## The 13 Tools
 
 | Tool | Description |
 |------|-------------|
+| `init_project` | Scaffold .sdlc/ state directory with auto-detected language and test framework |
 | `loss_compute` | Composite loss from test results and state files |
 | `failure_sig` | Failure signature for escape protocol tracking |
 | `diff_hash` | Git diff hash with collision detection |

@@ -17,7 +17,7 @@
 - [ ] Data invariant property tests green
 - [ ] No external service calls from data layer
 
-## Phase 3 — CORE LOGIC [LOCKED]
+## Phase 3 — CORE_LOGIC [LOCKED]
 - [ ] Business logic unit and property tests green
 - [ ] No UI dependency in logic layer
 

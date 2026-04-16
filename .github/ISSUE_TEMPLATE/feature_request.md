@@ -21,7 +21,7 @@ Which phase(s) would this feature affect?
 - [ ] Phase 0: Specification
 - [ ] Phase 1: Architecture
 - [ ] Phase 2: Foundation
-- [ ] Phase 3: Core Logic
+- [ ] Phase 3: CORE_LOGIC
 - [ ] Phase 4: Interface
 - [ ] Phase 5: Hardening
 - [ ] Phase 6: Alignment

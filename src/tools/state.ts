@@ -24,9 +24,8 @@ async function stateWriteCore(dir: string, updateJson: string): Promise<string> 
     }
     if (typeof update["loss"] === "number") {
       const oldLoss = extractLoss(updated)
-      updated = updateField(updated, "Loss", `total=${update["loss"]}`)
       const d = (update["loss"] as number) - oldLoss
-      updated = updateField(updated, "Loss delta", `${d >= 0 ? "+" : ""}${d}`)
+      updated = updateField(updated, "Loss", `total=${update["loss"]} delta=${d >= 0 ? "+" : ""}${d}`)
       if (d > 0) {
         updated = updateField(updated, "Escape status", "WARNING: Loss increased")
       }

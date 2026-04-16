@@ -49,14 +49,52 @@ Before completion:
 
 ## Interaction Mode
 
-This is a human-interactive phase. Ask clarifying questions.
+This is a human-interactive phase. **Use the `question` tool for ALL questions** to the
+human stakeholder. Do NOT print questions as plain text — the question tool renders
+selectable options in the OpenCode TUI for a streamlined experience.
+
+Interview flow:
+1. Start with a broad `question` about what they want to build
+2. Follow up with targeted `question` calls for specifics (operations, input style, etc.)
+3. Once you have enough information, write docs/intent.md
+4. Derive expectations and write docs/expectations.md
+5. Write BDD scenarios in docs/spec.md
+6. Run consistency check
+
 Do NOT proceed to implementation. Do NOT write code.
 
 ## Tools
 
+- question (for interactive interview — PREFERRED for all questions to the human)
 - write_file, edit_file (docs/*.md only)
 - read_file (existing docs)
 - bash (for validation checks)
+
+## Using the `question` Tool
+
+The `question` tool presents interactive, selectable questions directly in the OpenCode TUI.
+**Always use it instead of printing questions as plain text.** This is the primary mechanism
+for human interaction in Phase 0.
+
+Example usage for elicitation:
+
+```
+question({
+  questions: [{
+    question: "What arithmetic operations should the calculator support?",
+    header: "Operations",
+    options: [
+      { label: "Basic (+, -, *, /)", description: "Four standard operations" },
+      { label: "Basic + modulo", description: "Add % operator" },
+      { label: "Full scientific", description: "Including sqrt, pow, parentheses" }
+    ],
+    multiple: false
+  }]
+})
+```
+
+Use `multiple: true` when the human can select more than one option.
+Always include a reasonable set of options — the human can always type a custom answer.
 
 ## RESTRICTIONS
 
@@ -75,5 +113,4 @@ Phase 0 gate clears when:
 - Consistency check passes
 
 When Phase 0 gate clears, inform the user:
-"Specification complete. Switch to Convergence-Orchestrator agent to
-begin implementation, or run /run-phase 1."
+"Specification complete. Run /next to continue to Phase 1 — ARCHITECTURE."

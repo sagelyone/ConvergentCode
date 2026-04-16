@@ -32,7 +32,7 @@ Without immutable ground truth:
 ## Process
 
 ```
-Phase 0: Human + Spec Writer create docs/*.md
+Phase 0: Human + Orchestrator create docs/*.md
         ↓
 Seal: chmod 444 docs/*.md
       Install git hook

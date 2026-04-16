@@ -48,9 +48,26 @@ Present to human:
 
 ## Tools
 
+- question (PREFERRED for presenting ambiguous interpretations to human)
 - write_file, edit_file (sandbox only)
 - bash (for testing)
 - read_file (spec.md only)
+
+## Using the `question` Tool
+
+Present ambiguous interpretations to the human for resolution:
+
+```
+question({ questions: [{
+  question: "The spec scenario '[name]' can be interpreted multiple ways. Which matches your intent?",
+  header: "Spec Ambiguity",
+  options: [
+    { label: "Interpretation A", description: "[description of first interpretation]" },
+    { label: "Interpretation B", description: "[description of second interpretation]" },
+    { label: "Neither", description: "I'll clarify the spec text" }
+  ]
+}]})
+```
 
 ## RESTRICTIONS
 

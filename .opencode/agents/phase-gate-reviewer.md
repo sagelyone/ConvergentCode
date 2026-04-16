@@ -57,10 +57,28 @@ Action Required: [None | Fix before gate clear | Document in spec-gaps.md]
 
 ## Tools
 
+- question (PREFERRED for presenting gate check results to human)
 - read_file (source, tests, docs)
 - bash (for running checks)
 - loss_compute
 - gate_check
+
+## Using the `question` Tool
+
+Present gate check results to the human via `question` so they can make informed
+decisions about phase advancement:
+
+```
+question({ questions: [{
+  question: "Phase [N] gate check results: [X/7] PASS, [Y/7] FAIL. How to proceed?",
+  header: "Gate Results",
+  options: [
+    { label: "Fix failures first", description: "Address FAIL findings before advancing" },
+    { label: "Accept and advance", description: "Failures are acceptable, proceed to next phase" },
+    { label: "Document gaps only", description: "Record failures in spec-gaps.md and advance" }
+  ]
+}]})
+```
 
 ## Writes
 

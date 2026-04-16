@@ -46,10 +46,11 @@ This creates:
 Run:
 
 ```
-/run-phase 0
+/next
 ```
 
-The Spec Writer agent will interview you to create:
+The Convergence Orchestrator will interview you directly using interactive
+questions to create:
 - `docs/intent.md` - Your goals and motivations
 - `docs/expectations.md` - System invariants
 - `docs/spec.md` - BDD scenarios
@@ -58,14 +59,10 @@ Answer questions honestly. The spec becomes immutable after this phase.
 
 ## Step 4: Autonomous Development
 
-Run phases 1-5:
+Continue driving development with `/next` (recommended) or target specific phases:
 
 ```
-/run-phase 1
-/run-phase 2
-/run-phase 3
-/run-phase 4
-/run-phase 5
+/next              # Continues from wherever you left off
 ```
 
 These run autonomously. The agents will:
@@ -117,7 +114,8 @@ If agents get stuck:
 - L1 (×3): Strategy rotation
 - L2 (×5): Task decomposition
 - L3 (×7): Environment verification
-- L4 (×9): Block task
+- L4 (×9): Block task, move on
+- L4.5: Needs human input — worker writes question to blockers.md, Orchestrator asks the human and re-dispatches
 
 ## Next Steps
 

@@ -79,12 +79,38 @@ Verify: test framework works independently
 **Blocker Entry**:
 ```markdown
 ## [BLK-NNN] L4 Escape
-**Task**: P2-003
-**Escape Level**: 4
-**Description**: Cannot implement due to [reason]
-**Failure Signature**: abc123
-**Created**: 2024-01-15T10:30:00Z
-**Resolution**: None (requires human intervention)
+**Task:** P2-003
+**Escape Level:** 4
+**Description:** Cannot implement due to [reason]
+**Question:** [Question for human, if needs_human_input]
+**Created:** 2025-01-15T10:30:00Z
+**Resolution:** None (requires human intervention)
+```
+
+### L4.5: Needs Human Input (not failure-based)
+
+**Trigger**: Worker cannot infer from spec, cannot defer, and cannot proceed
+
+This is NOT triggered by repeated failures. It is triggered when a worker encounters
+an unresolvable ambiguity that cannot be inferred from `docs/intent.md`,
+`docs/expectations.md`, or `docs/spec.md`, and deferring the gap is not viable.
+
+**Action**:
+1. Write to `.sdlc/blockers.md` with `**Resolution:** needs_human_input`
+2. Include a `**Question:**` field with the specific question for the human
+3. Mark the task as BLOCKED via `todo_update`
+4. The Orchestrator reads the blocker, asks the human via `question` tool,
+   writes the answer back, and re-dispatches the worker with the answer
+
+**Blocker Entry**:
+```markdown
+## [BLK-NNN] needs_human_input
+**Task:** P3-005
+**Escape Level:** 4.5
+**Description:** Cannot determine [specific thing] from spec
+**Question:** Should [option A] or [option B] be the behavior when [condition]?
+**Created:** 2025-01-15T10:30:00Z
+**Resolution:** needs_human_input
 ```
 
 ## Implementation Notes

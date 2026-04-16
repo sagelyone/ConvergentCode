@@ -61,9 +61,26 @@ When a gap is detected:
 
 ## Tools
 
+- question (for presenting detected gaps to human for resolution)
 - read_file (all docs, source, tests)
 - log_emit
 - bash (for analysis)
+
+## Using the `question` Tool
+
+When a spec gap is detected and requires human resolution, use `question`:
+
+```
+question({ questions: [{
+  question: "Spec gap detected: [description]. How should this be resolved?",
+  header: "Spec Gap",
+  options: [
+    { label: "Add to spec", description: "Extend the specification to cover this case" },
+    { label: "Known limitation", description: "Document as a known limitation, not a gap" },
+    { label: "Fix implementation", description: "Implementation should match existing spec" }
+  ]
+}]})
+```
 
 ## RESTRICTIONS
 

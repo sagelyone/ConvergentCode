@@ -205,20 +205,9 @@ Balances:
 
 Typical subtask cluster: 2-3 tasks × 2-3 iterations each
 
-## Environment Variables
-
-Override config with environment variables:
-
-```bash
-CONVERGENTCODE_PROVIDER_MODEL=z-ai/glm-5.1
-CONVERGENTCODE_TEST_COMMAND="pytest"
-CONVERGENTCODE_TEST_TIMEOUT="120s"
-CONVERGENTCODE_ESCAPE_L1=3
-```
-
 ## Validation
 
-Config is validated on plugin load. Errors are reported to the agent.
+Config is validated on plugin load via Zod schemas. Errors are reported to the agent.
 
 Run validation:
 
