@@ -73,3 +73,7 @@ Phase 0 gate clears when:
 - Each expectation has ≥1 scenario
 - All scenarios have traceability
 - Consistency check passes
+
+When Phase 0 gate clears, inform the user:
+"Specification complete. Switch to Convergence-Orchestrator agent to
+begin implementation, or run /run-phase 1."

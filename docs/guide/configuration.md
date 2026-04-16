@@ -12,14 +12,24 @@ ConvergentCode-specific settings live in `.sdlc/config.json` (not in `.opencode/
 
 ```jsonc
 {
+  // Project language (empty = not configured, agents will detect or ask)
+  "language": "",
+  // Log verbosity: "minimal" | "verbose" | "debug"
+  "log_level": "minimal",
+  // Seconds before assuming a worker is hung
+  "stale_threshold": 300,
+  // Source file glob patterns for assertion density scanning
+  "source_extensions": ["*.go", "*.py", "*.rs", "*.ts", "*.js"],
+
   // Test runner configuration
   "test": {
-    "command": "go test",           // Test command
-    "unit": "./...",                // Unit test pattern
-    "property": "-run Prop ./...",  // Property test pattern
-    "acceptance": "-run Acceptance ./...",  // Acceptance test pattern
-    "lint": "golangci-lint run --out-format=line-number",  // Lint command
-    "timeout": "120s"               // Test timeout
+    "command": "",           // Test command (e.g., "go test", "pytest", "bun test")
+    "unit": "",              // Unit test pattern
+    "property": "",          // Property test pattern
+    "acceptance": "",        // Acceptance test pattern
+    "lint": "true",          // Lint command ("true" = no-op)
+    "build": "",             // Build command (e.g., "go build ./...", "tsc --noEmit")
+    "timeout": "120s"        // Test timeout
   },
 
   // Escape protocol thresholds
@@ -109,12 +119,14 @@ Provider and model settings are configured in OpenCode's own `.opencode/config.j
 
 ```jsonc
 {
+  "language": "go",
   "test": {
     "command": "go test",
     "unit": "./...",
     "property": "-run Prop ./...",
     "acceptance": "-run Acceptance ./...",
     "lint": "golangci-lint run",
+    "build": "go build ./...",
     "timeout": "120s"
   }
 }
@@ -124,6 +136,7 @@ Provider and model settings are configured in OpenCode's own `.opencode/config.j
 
 ```jsonc
 {
+  "language": "typescript",
   "test": {
     "command": "bun test",
     "unit": "src/**/*.test.ts",
@@ -139,6 +152,7 @@ Provider and model settings are configured in OpenCode's own `.opencode/config.j
 
 ```jsonc
 {
+  "language": "python",
   "test": {
     "command": "pytest",
     "unit": "tests/unit",
@@ -197,7 +211,7 @@ Override config with environment variables:
 
 ```bash
 CONVERGENTCODE_PROVIDER_MODEL=z-ai/glm-5.1
-CONVERGENTCODE_TEST_COMMAND="go test"
+CONVERGENTCODE_TEST_COMMAND="pytest"
 CONVERGENTCODE_TEST_TIMEOUT="120s"
 CONVERGENTCODE_ESCAPE_L1=3
 ```

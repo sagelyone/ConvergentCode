@@ -3,7 +3,7 @@ import { join, resolve } from "path"
 
 const EMBEDDED_TEMPLATES: Record<string, string> = {
   "state.md": `# State\n\n**Phase:** 0 — SPECIFICATION\n**Active task:** P0-001\n**Iteration:** task=1 phase=1 global=1\n**Loss:** total=0 delta=0\n**Last action:** init\n**Last test:** none\n**Failure signature:** none\n**Escape status:** clear\n**Next action:** Elicit requirements from human\n`,
-  "todo.md": `# Todo\n\n## Phase 0 — SPECIFICATION\n\n### P0-001: Elicit stakeholder intents [active]\n- [ ] Define project goals and success criteria\n- [ ] Document stakeholder expectations\n- [ ] Create BDD scenarios\n`,
+  "todo.md": `# Todo\n\n## Phase 0 — SPECIFICATION\n\n### P0-001: Elicit stakeholder intents [ACTIVE]\n- [ ] Define project goals and success criteria\n- [ ] Document stakeholder expectations\n- [ ] Create BDD scenarios\n`,
   "phases.md": `# Phases\n\n## Phase 0 — SPECIFICATION [ACTIVE]\n- [ ] All intents documented\n- [ ] All expectations mapped to intents\n- [ ] All scenarios have example tables\n- [ ] Consistency check passes\n- [ ] No unresolved ambiguities\n\n## Phase 1 — ARCHITECTURE [LOCKED]\n- [ ] Acceptance test paths identified\n- [ ] Properties defined\n- [ ] Module boundaries established\n- [ ] Dependency graph documented\n- [ ] Architecture review complete\n\n## Phase 2 — FOUNDATION [LOCKED]\n- [ ] Data models implemented\n- [ ] Unit tests for data layer\n- [ ] Property tests for invariants\n- [ ] No test failures\n\n## Phase 3 — CORE_LOGIC [LOCKED]\n- [ ] Business logic implemented\n- [ ] Unit tests pass\n- [ ] Property tests pass\n- [ ] No UI dependency\n\n## Phase 4 — INTERFACE [LOCKED]\n- [ ] Integration tests pass\n- [ ] Differential check complete\n- [ ] API contracts verified\n\n## Phase 5 — HARDENING [LOCKED]\n- [ ] All tests green\n- [ ] Coverage threshold met\n- [ ] No lint errors\n- [ ] No spec gaps\n\n## Phase 6 — ALIGNMENT [LOCKED]\n- [ ] All intents confirmed by human\n- [ ] Loss = 0\n`,
   "spec-gaps.md": `# Spec Gaps\n\n(No gaps detected yet)\n`,
   "blockers.md": `# Blockers\n\n(No blockers yet)\n`,
@@ -11,12 +11,17 @@ const EMBEDDED_TEMPLATES: Record<string, string> = {
   "spec.md": `# Specification\n\n(To be defined during Phase 0)\n`,
   "intent.md": `# Intent\n\n(To be defined during Phase 0)\n`,
   "sdlc-config.json": JSON.stringify({
+    language: "",
+    log_level: "minimal",
+    stale_threshold: 300,
+    source_extensions: ["*.go", "*.py", "*.rs", "*.ts", "*.js"],
     test: {
-      command: "go test",
-      unit: "./...",
-      property: "-run Prop ./...",
-      acceptance: "-run Acceptance ./...",
+      command: "",
+      unit: "",
+      property: "",
+      acceptance: "",
       lint: "true",
+      build: "",
       timeout: "120s",
     },
     escape: { L1: 3, L2: 5, L3: 7, L4: 9 },
@@ -29,6 +34,7 @@ const EMBEDDED_TEMPLATES: Record<string, string> = {
       max_lines: { scaffold: 120, modify: 50 },
       max_files: 4,
       diff_hash_window: 8,
+      log_tail: { worker: 20, orchestrator: 50, gate_reviewer: "current_phase" },
     },
   }, null, 2),
 }

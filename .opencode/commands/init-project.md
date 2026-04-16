@@ -7,8 +7,6 @@ Scaffold the `.sdlc/` state directory for a new project.
 Before running this command, ensure ConvergentCode is installed:
 - `.opencode/plugins/convergentcode.js` exists (the plugin file)
 - `.opencode/agents/`, `.opencode/commands/`, `.opencode/rules/`, `.opencode/skills/` contain ConvergentCode markdown files
-- `shell/` directory exists in the project root (contains `loss-compute.sh`, `gate-check.sh`, `failure-sig.sh`, `diff-hash.sh`, `log-emit.sh`)
-- `sdlc-tool` binary is on PATH or at `~/.local/bin/sdlc-tool`
 
 If any prerequisite is missing, follow the installation instructions in the ConvergentCode README first.
 
@@ -51,12 +49,16 @@ If `.sdlc/config.json` does not already exist, create it with these defaults:
 
 ```json
 {
+  "language": "",
+  "log_level": "minimal",
+  "stale_threshold": 300,
   "test": {
-    "command": "go test",
-    "unit": "./...",
-    "property": "-run Prop ./...",
-    "acceptance": "-run Acceptance ./...",
+    "command": "",
+    "unit": "",
+    "property": "",
+    "acceptance": "",
     "lint": "true",
+    "build": "",
     "timeout": "120s"
   },
   "escape": { "L1": 3, "L2": 5, "L3": 7, "L4": 9 },
@@ -68,9 +70,15 @@ If `.sdlc/config.json` does not already exist, create it with these defaults:
   "constraints": {
     "max_lines": { "scaffold": 120, "modify": 50 },
     "max_files": 4,
-    "diff_hash_window": 8
+    "diff_hash_window": 8,
+    "log_tail": {
+      "worker": 20,
+      "orchestrator": 50,
+      "gate_reviewer": "current_phase"
+    }
   }
 }
 ```
 
-Adjust `test.command` and patterns to match your project's language and test framework.
+Set `language` and `test.command` to match your project's language and test framework.
+See `docs/guide/configuration.md` for language-specific examples.

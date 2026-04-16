@@ -6,6 +6,10 @@
 - **A:** Conversational.
 - **R:** Ground truth for the system.
 - **T:** Human-paced.
+- **Type:** task
+- **Depends on:** none
+- **Scenarios:** []
+- **Repro:**
 - **Iteration count:** 0
 - **Failure signatures:** []
 
@@ -15,6 +19,10 @@
 - **A:** Conversational.
 - **R:** EXP-001+ trace to INT-001+.
 - **T:** Human-paced.
+- **Type:** task
+- **Depends on:** P0-001
+- **Scenarios:** []
+- **Repro:**
 - **Iteration count:** 0
 - **Failure signatures:** []
 
@@ -24,6 +32,10 @@
 - **A:** Conversational.
 - **R:** Scenarios trace to expectations and intents.
 - **T:** Human-paced.
+- **Type:** task
+- **Depends on:** P0-002
+- **Scenarios:** []
+- **Repro:**
 - **Iteration count:** 0
 - **Failure signatures:** []
 
@@ -33,6 +45,10 @@
 - **A:** Automated.
 - **R:** Phase 0 gate condition.
 - **T:** L1 at sig×3 · L2 at sig×5 · L3 at sig×7 · BLOCKED at sig×9.
+- **Type:** task
+- **Depends on:** P0-003
+- **Scenarios:** []
+- **Repro:**
 - **Iteration count:** 0
 - **Failure signatures:** []
 

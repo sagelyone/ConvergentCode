@@ -58,6 +58,38 @@ Triggered by repeated failure signatures (not iteration count):
 - `.sdlc/blockers.md` - L4 blocked tasks
 - `.sdlc/agent.log` - Structured event log
 
+## Phase Detection
+
+On startup, ConvergentCode detects the project's phase automatically:
+1. .sdlc/state.md exists → use its Phase field
+2. All three docs exist → Phase 0 cleared, start at Phase 1
+3. Partial or no docs → Phase 0 (delegate to Spec-Writer)
+
+## Language Support
+
+ConvergentCode is language-agnostic. Configure `.sdlc/config.json`:
+- `language`: project language (go, python, typescript, etc.)
+- `test.command`: test runner (go test, pytest, vitest, etc.)
+- `test.unit/property/acceptance`: test patterns
+- `test.lint`: linter command
+- `test.build`: build command
+
+Agents read these settings to adapt build, test, and verification commands.
+
+## Bug & Feedback Protocol
+
+User-reported issues flow through the existing file structure:
+- Implementation bugs → todo.md (Type: bug, Repro: steps)
+- Spec gaps revealed by bugs → spec-gaps.md + todo.md
+- Feature requests → todo.md (Type: feature)
+
+## Resilience
+
+- Stale workers: if state.md hasn't updated in stale_threshold seconds,
+  Orchestrator dispatches a replacement worker
+- API errors: agents log failures and try alternative approaches
+- Token limits: agents stop at 3000 words and continue next turn
+
 ## Commands
 
 - `/init-project` - Scaffold state directory

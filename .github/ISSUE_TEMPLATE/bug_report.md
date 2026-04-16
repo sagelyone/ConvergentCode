@@ -22,8 +22,7 @@ A clear and concise description of what you expected to happen.
 **Environment (please complete the following information):**
  - OS: [e.g. macOS, Linux, Windows]
  - Node.js version: [e.g. 18.0.0]
- - Go version: [e.g. 1.21]
- - ConvergentCode version: [e.g. 0.1.0]
+ - ConvergentCode version: [e.g. 0.3.0]
  - OpenCode version: [if applicable]
 
 **State Files**

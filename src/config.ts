@@ -3,12 +3,17 @@ import { join } from "path"
 import { readFile } from "fs/promises"
 
 const DEFAULT_CONFIG: ConvergentConfig = {
+  language: "",
+  log_level: "minimal",
+  stale_threshold: 300,
+  source_extensions: ["*.go", "*.py", "*.rs", "*.ts", "*.js"],
   test: {
-    command: "go test",
-    unit: "./...",
-    property: "-run Prop ./...",
-    acceptance: "-run Acceptance ./...",
+    command: "",
+    unit: "",
+    property: "",
+    acceptance: "",
     lint: "true",
+    build: "",
     timeout: "120s",
   },
   escape: { L1: 3, L2: 5, L3: 7, L4: 9 },
@@ -34,32 +39,4 @@ export async function readConfig(projectDir: string): Promise<ConvergentConfig> 
   } catch {
     return DEFAULT_CONFIG
   }
-}
-
-export function getDefaultConfig(): ConvergentConfig {
-  return DEFAULT_CONFIG
-}
-
-export function getTestCommand(config: ConvergentConfig): string {
-  return config.test?.command ?? "go test"
-}
-
-export function getTestUnit(config: ConvergentConfig): string {
-  return config.test?.unit ?? "./..."
-}
-
-export function getTestProperty(config: ConvergentConfig): string {
-  return config.test?.property ?? "-run Prop ./..."
-}
-
-export function getTestAcceptance(config: ConvergentConfig): string {
-  return config.test?.acceptance ?? "-run Acceptance ./..."
-}
-
-export function getLintCommand(config: ConvergentConfig): string {
-  return config.test?.lint ?? "true"
-}
-
-export function getTimeout(config: ConvergentConfig): string {
-  return config.test?.timeout ?? "120s"
 }

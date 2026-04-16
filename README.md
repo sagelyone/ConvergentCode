@@ -11,27 +11,23 @@ Convergence-driven autonomous development harness for OpenCode.
 ConvergentCode brings structured, phase-gated, loss-driven software development to OpenCode. It includes:
 
 - **7 specialized agents** for different SDLC phases
-- **11 custom tools** for state management and testing
+- **12 custom tools** for state management and testing
 - **6 commands** for project initialization and control
 - **Escape protocol** for handling stuck situations
 - **Immutable ground truth** for specification integrity
 
 ## Installation
 
-ConvergentCode consists of **four components** that must all be present for full functionality:
+ConvergentCode is a pure TypeScript plugin for OpenCode. No external binaries or runtime dependencies required.
 
 | Component | Required? | What breaks without it |
 |---|---|---|
 | `.opencode/agents/`, `commands/`, `rules/`, `skills/` | **Required** | No agents or commands appear in OpenCode |
-| `.opencode/plugins/convergentcode.js` | **Required** | The 11 custom tools (loss_compute, gate_check, etc.) are unavailable |
-| `shell/` directory in project root | **Required** | loss_compute, gate_check, diff_hash, failure_sig, log_emit return empty/zero defaults silently |
-| `sdlc-tool` binary on PATH | **Required** | state_write, todo_update, phase_advance, commit_green, rollback, scenario_matrix return errors |
+| `.opencode/plugins/convergentcode.js` | **Required** | The 12 custom tools (loss_compute, gate_check, etc.) are unavailable |
 
 **Nothing goes in the `plugins` array of `.opencode/config.json`.** OpenCode auto-loads files from `.opencode/plugins/` and the declarative asset directories.
 
 ### Option 1: Clone and build (most reliable)
-
-This is the only method that guarantees all four components are installed correctly.
 
 ```bash
 # Clone and build
@@ -40,30 +36,13 @@ cd ConvergentCode
 npm install
 npm run build                          # produces dist/convergentcode.js
 
-# Build and install the Go binary
-cd sdlc-tool && go build -o ~/.local/bin/sdlc-tool . && cd ..
-
-# Install everything into your project (replace /path/to/project)
-CC=/path/to/ConvergentCode
-PROJ=/path/to/your/project
-
-cp dist/convergentcode.js "$PROJ/.opencode/plugins/convergentcode.js"
-cp -r .opencode/agents/*   "$PROJ/.opencode/agents/"
-cp -r .opencode/commands/* "$PROJ/.opencode/commands/"
-cp -r .opencode/rules/*    "$PROJ/.opencode/rules/"
-cp -r .opencode/skills/*   "$PROJ/.opencode/skills/"
-cp -r shell/               "$PROJ/shell/"
-chmod +x "$PROJ/shell/"*
-```
-
-Or use the install script after building:
-```bash
+# Install into your project
 ./install.sh --source . --project /path/to/your/project
 ```
 
 ### Option 2: Manual asset copy (no build tools needed)
 
-If you don't have Node.js/Bun or Go, you can deploy just the declarative assets. You will get the 7 agents and 6 commands, but the 11 tools will be unavailable. This is enough to use the phase structure and agent guidance without automated loss computation.
+If you don't have Node.js/Bun, you can deploy just the declarative assets. You will get the 7 agents and 6 commands, but the 12 tools will be unavailable.
 
 ```bash
 CC=/path/to/ConvergentCode
@@ -78,13 +57,11 @@ cp -r $CC/.opencode/skills/*   "$PROJ/.opencode/skills/"
 ```
 
 **Limitations of manual copy only:**
-- The 11 tools (`loss_compute`, `gate_check`, etc.) will not be registered — no automated loss tracking or escape protocol
+- The 12 tools (`loss_compute`, `gate_check`, etc.) will not be registered — no automated loss tracking or escape protocol
 - You must manually manage state files and phase transitions
-- To add tools later, you must build the plugin (`npm run build`) and copy `dist/convergentcode.js` to `.opencode/plugins/`
+- To add tools later, build the plugin (`npm run build`) and copy `dist/convergentcode.js` to `.opencode/plugins/`
 
 ### Option 3: `install.sh` (requires published GitHub Release)
-
-Once a release is published on GitHub, this one-liner handles everything:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/sagelyone/ConvergentCode/main/install.sh | bash
@@ -95,8 +72,6 @@ For a specific project:
 curl -fsSL https://raw.githubusercontent.com/sagelyone/ConvergentCode/main/install.sh | bash -s -- --project /path/to/your/project
 ```
 
-**Note:** This option requires a GitHub Release to exist. If no release is available yet, use Option 1 or 2.
-
 ### What gets installed where
 
 | Artifact | Destination | Installed by |
@@ -106,9 +81,32 @@ curl -fsSL https://raw.githubusercontent.com/sagelyone/ConvergentCode/main/insta
 | `.opencode/commands/*.md` | `<project>/.opencode/commands/` | All options |
 | `.opencode/rules/*.md` | `<project>/.opencode/rules/` | All options |
 | `.opencode/skills/` | `<project>/.opencode/skills/` | All options |
-| `shell/*.sh` | `<project>/shell/` | Option 1, 3 |
-| `sdlc-tool` binary | `~/.local/bin/sdlc-tool` | Option 1, 3 |
+| `templates/` | `<project>/templates/` | Option 1, 3 |
 | `.sdlc/config.json` | `<project>/.sdlc/config.json` | Created by `/init-project` |
+
+### Upgrading
+
+Re-running `install.sh` overwrites agents, commands, rules, skills, and the plugin with the latest versions. Your `.sdlc/` state files and `docs/` are never modified.
+
+To also update `.sdlc/config.json` with new default fields while preserving your existing settings:
+
+```bash
+./install.sh --source . --project /path/to/your/project --upgrade
+```
+
+### Uninstalling
+
+```bash
+./uninstall.sh --project /path/to/your/project
+
+# Also remove .sdlc/ state directory:
+./uninstall.sh --project /path/to/your/project --remove-sdlc
+
+# Remove global installation:
+./uninstall.sh --global
+```
+
+This removes agents, commands, rules, skills, the plugin, and templates. Your `docs/` directory and `.sdlc/` are preserved by default.
 
 ## Quick Start
 
@@ -118,6 +116,7 @@ curl -fsSL https://raw.githubusercontent.com/sagelyone/ConvergentCode/main/insta
    ```
    /init-project
    ```
+   Review `.sdlc/config.json` and set `language`, `test.command`, and `test.build` for your project.
 
 3. **Run Phase 0: Specification** (human-interactive)
    ```
@@ -179,20 +178,44 @@ curl -fsSL https://raw.githubusercontent.com/sagelyone/ConvergentCode/main/insta
 | `/compute-loss` | Report current loss by component |
 | `/convergence-status` | Loss trajectory and escape event frequency |
 
+## The 12 Tools
+
+| Tool | Description |
+|------|-------------|
+| `loss_compute` | Composite loss from test results and state files |
+| `failure_sig` | Failure signature for escape protocol tracking |
+| `diff_hash` | Git diff hash with collision detection |
+| `state_write` | Update state.md with monotonic progress check |
+| `todo_update` | Task operations (add/start/complete/block) |
+| `log_emit` | Structured log entry to agent.log |
+| `gate_check` | Phase gate clearance check |
+| `phase_advance` | Advance to next phase atomically |
+| `commit_green` | Git commit on successful task completion |
+| `rollback` | Revert to last known-good commit |
+| `scenario_matrix` | Uncovered scenario cells from spec.md |
+| `assertion_density` | Assertion density across source files |
+
 ## Configuration
 
 ConvergentCode-specific configuration lives in `.sdlc/config.json` (not in `.opencode/config.json`). This file is created automatically by `/init-project` from `templates/sdlc-config.json`.
 
-Example `.sdlc/config.json`:
+ConvergentCode is language-agnostic. Configure test commands, build commands, and language in `.sdlc/config.json`. After running `/init-project`, review and adjust the config for your language.
+
+Example `.sdlc/config.json` for a Go project:
 
 ```json
 {
+  "language": "go",
+  "log_level": "minimal",
+  "stale_threshold": 300,
+  "source_extensions": ["*.go"],
   "test": {
     "command": "go test",
     "unit": "./...",
     "property": "-run Prop ./...",
     "acceptance": "-run Acceptance ./...",
-    "lint": "true",
+    "lint": "golangci-lint run",
+    "build": "go build ./...",
     "timeout": "120s"
   },
   "escape": { "L1": 3, "L2": 5, "L3": 7, "L4": 9 },
@@ -204,10 +227,40 @@ Example `.sdlc/config.json`:
   "constraints": {
     "max_lines": { "scaffold": 120, "modify": 50 },
     "max_files": 4,
-    "diff_hash_window": 8
+    "diff_hash_window": 8,
+    "log_tail": {
+      "worker": 20,
+      "orchestrator": 50,
+      "gate_reviewer": "current_phase"
+    }
   }
 }
 ```
+
+### Configuration Fields
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| `language` | Project language (go, python, typescript, etc.) | `""` (not configured) |
+| `log_level` | Log verbosity: `minimal`, `verbose`, `debug` | `"minimal"` |
+| `stale_threshold` | Seconds before assuming a worker is hung | `300` |
+| `source_extensions` | Source file glob patterns for assertion density | `["*.go","*.py","*.rs","*.ts","*.js"]` |
+| `test.command` | Test runner command | `""` (must configure) |
+| `test.unit` | Unit test pattern | `""` |
+| `test.property` | Property test pattern | `""` |
+| `test.acceptance` | Acceptance test pattern | `""` |
+| `test.lint` | Linter command | `"true"` (no-op) |
+| `test.build` | Build command | `""` |
+| `test.timeout` | Test timeout | `"120s"` |
+| `escape.L1`–`L4` | Escape protocol thresholds | `3, 5, 7, 9` |
+| `loss_weights.*` | Loss function component weights | See template |
+| `constraints.max_lines.scaffold` | Max lines for new files (Phases 1-2) | `120` |
+| `constraints.max_lines.modify` | Max lines for modifications (Phases 3-5) | `50` |
+| `constraints.max_files` | Max files touched per task | `4` |
+| `constraints.diff_hash_window` | Window for diff hash collision detection | `8` |
+| `constraints.log_tail.worker` | Agent.log lines for workers | `20` |
+| `constraints.log_tail.orchestrator` | Agent.log lines for orchestrator | `50` |
+| `constraints.log_tail.gate_reviewer` | Agent.log lines for gate reviewer | `"current_phase"` |
 
 ## State Files
 
@@ -250,19 +303,16 @@ npm run typecheck
 # Run tests
 npm run test
 
-# Run all tests (TypeScript + Go)
-npm run test:all
-
-# Build (produces dist/convergentcode.js + cross-compiled Go binaries)
+# Build (produces dist/convergentcode.js)
 npm run build
 ```
 
 ### Releasing
 
 1. Update version in `package.json` and `CHANGELOG.md`
-2. Create a new tag: `git tag -a v0.1.0 -m "Release v0.1.0"`
-3. Push tag: `git push origin v0.1.0`
-4. GitHub Actions will automatically create a release with the plugin bundle, `sdlc-tool` binaries, and a `.tar.gz`
+2. Create a new tag: `git tag -a v0.3.0 -m "Release v0.3.0"`
+3. Push tag: `git push origin v0.3.0`
+4. GitHub Actions will automatically create a release with the plugin bundle and a `.tar.gz`
 
 ## License
 

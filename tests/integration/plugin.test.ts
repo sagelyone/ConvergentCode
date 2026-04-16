@@ -34,8 +34,8 @@ describe("plugin entry point", () => {
 describe("tool definitions", () => {
   const toolNames = Object.keys(allTools)
 
-  it("should register all 11 tools", () => {
-    expect(toolNames.length).toBe(11)
+  it("should register all 12 tools", () => {
+    expect(toolNames.length).toBe(12)
   })
 
   it("should have the expected tool names", () => {
@@ -51,6 +51,7 @@ describe("tool definitions", () => {
       "commit_green",
       "rollback",
       "scenario_matrix",
+      "assertion_density",
     ]
     for (const name of expected) {
       expect(toolNames).toContain(name)

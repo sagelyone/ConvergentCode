@@ -67,9 +67,9 @@ Modifications should be surgical:
 **The interface boundary pattern:**
 
 ```
-1. Implementation file (service.go)
-2. Service interface (service.go)
-3. Type definitions (types.go)
+1. Implementation file (service.py / service.go / service.ts)
+2. Service interface (if applicable)
+3. Type definitions
 4. One more (test, mock, etc.)
 ```
 

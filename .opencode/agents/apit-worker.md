@@ -28,6 +28,13 @@ Read on phase entry or when relevant:
   bash: cat .sdlc/phases.md
   bash: cat .sdlc/blockers.md
 
+Your dispatch context includes:
+- Interface contract: exact method signatures to implement/consume
+- Spec scenarios: SC-IDs relevant to your task with expected behavior
+- Project layout: directory structure and package organization
+- Language: from .sdlc/config.json — adapt all commands accordingly
+Read these from the task description in todo.md before planning.
+
 ## STEP 1 — ANALYZE
 
 From state.md: What phase? What task? What happened last?
@@ -69,6 +76,32 @@ If scope exceeds limits → decompose. Write subtasks via todo_update.
 Minimal change. Nothing more.
 log_emit "code_edit" '{"file":"...","lines_changed":N}'
 
+Before writing code that uses an external library or unfamiliar API:
+1. Verify method signatures exist by reading the library source or docs.
+2. Never assume a method name — hallucinated APIs cause build failures.
+3. If unsure, write a minimal test program first and compile/run it.
+4. Adapt verification to the project language (read .sdlc/config.json):
+   - Go: go vet, go build
+   - Python: python -c "import ...", mypy/pytest --collect-only
+   - TypeScript: tsc --noEmit, check node_modules
+   - Rust: cargo check, cargo test --no-run
+   - Other: use test.build and test.command from config
+
+Before creating a new file:
+1. Check the directory's existing module/package declaration.
+2. Never mix package declarations in the same directory.
+3. Place entry points (package main, __main__.py, etc.) in cmd/ or
+   appropriate subdirectory per language convention.
+
+## STEP 3.5 — BUILD CHECK
+
+Run the configured build/lint command from .sdlc/config.json:
+  bash: $LINT_CMD && $BUILD_CMD
+
+IF build fails: fix the error immediately before proceeding to testing.
+Common issues: wrong package/module declaration, non-existent methods,
+import cycles, wrong directory for package. Log the fix via log_emit.
+
 ## STEP 4 — TEST AND VERIFY
 
 Run the specific test. Then:
@@ -108,6 +141,9 @@ L4 (sig×9): BLOCKED → blockers.md. Move to next task.
 ## OUTPUT FORMAT
 
 State read → Loss → Plan → Implementation → Test result → Spec observations → State update → Next iteration
+
+If your output exceeds 3000 words, stop and continue in the next turn
+via a tool call. Do not produce excessively long responses.
 
 ## RESTRICTIONS
 

@@ -27,7 +27,10 @@ describe("init-project", () => {
       await copyFile(join(REPO_ROOT, "templates", "sdlc-config.json"), join(TEST_DIR, "templates", "sdlc-config.json"))
     } catch {
       await Bun.write(join(TEST_DIR, "templates", "sdlc-config.json"), JSON.stringify({
-        test: { command: "go test", unit: "./..." },
+        language: "",
+        log_level: "minimal",
+        stale_threshold: 300,
+        test: { command: "", unit: "", build: "" },
         escape: { L1: 3, L2: 5, L3: 7, L4: 9 },
         loss_weights: { acceptance: 100 },
         constraints: { max_files: 4 },

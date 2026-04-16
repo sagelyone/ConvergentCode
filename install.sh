@@ -2,8 +2,6 @@
 set -euo pipefail
 
 REPO="sagelyone/ConvergentCode"
-BINARY_NAME="sdlc-tool"
-LOCAL_BIN="${HOME}/.local/bin"
 CONFIG_DIR="${HOME}/.config/opencode"
 RELEASE_BASE="https://github.com/${REPO}/releases/latest/download"
 
@@ -16,23 +14,6 @@ info()  { echo -e "${GREEN}[INFO]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
 error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 
-detect_platform() {
-  local os arch
-  os="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  arch="$(uname -m)"
-  case "$os" in
-    linux)  os="linux" ;;
-    darwin) os="darwin" ;;
-    *)      error "Unsupported OS: $os" ;;
-  esac
-  case "$arch" in
-    x86_64|amd64) arch="amd64" ;;
-    aarch64|arm64) arch="arm64" ;;
-    *)             error "Unsupported architecture: $arch" ;;
-  esac
-  echo "${os}-${arch}"
-}
-
 download_file() {
   local url="$1" dest="$2"
   if command -v curl &>/dev/null; then
@@ -42,37 +23,6 @@ download_file() {
   else
     return 1
   fi
-}
-
-install_binary() {
-  local platform="$1"
-  local dest_dir="${LOCAL_BIN}"
-  local binary_url="${RELEASE_BASE}/sdlc-tool-${platform}"
-  local dest_path="${dest_dir}/${BINARY_NAME}"
-
-  mkdir -p "$dest_dir"
-
-  info "Downloading sdlc-tool for ${platform}..."
-  if download_file "$binary_url" "$dest_path" 2>/dev/null; then
-    chmod +x "$dest_path"
-    info "Installed sdlc-tool to ${dest_path}"
-  else
-    warn "Pre-built binary not available. Falling back to Go build."
-    build_from_source
-  fi
-}
-
-build_from_source() {
-  if ! command -v go &>/dev/null; then
-    error "Go is not installed. Install Go from https://go.dev/dl/ or download the pre-built binary manually."
-  fi
-  info "Building sdlc-tool from source..."
-  local tmpdir
-  tmpdir="$(mktemp -d)"
-  git clone --depth 1 "https://github.com/${REPO}.git" "$tmpdir/convergentcode"
-  (cd "$tmpdir/convergentcode/sdlc-tool" && go build -o "${LOCAL_BIN}/${BINARY_NAME}" .)
-  rm -rf "$tmpdir"
-  info "Built and installed sdlc-tool to ${LOCAL_BIN}/${BINARY_NAME}"
 }
 
 download_and_extract_release() {
@@ -111,18 +61,6 @@ copy_assets() {
   info "Copied .opencode/ assets to ${target_dir}"
 }
 
-copy_shell() {
-  local src_dir="$1"
-  local dest_dir="$2"
-
-  if [ -d "${src_dir}/shell" ]; then
-    mkdir -p "${dest_dir}/shell"
-    cp -r "${src_dir}/shell/"* "${dest_dir}/shell/" 2>/dev/null || true
-    chmod +x "${dest_dir}/shell/"* 2>/dev/null || true
-    info "Copied shell/ scripts to ${dest_dir}/shell/"
-  fi
-}
-
 copy_templates() {
   local src_dir="$1"
   local dest_dir="$2"
@@ -143,15 +81,6 @@ copy_plugin() {
   info "Installed plugin to ${plugin_dest}/convergentcode.js"
 }
 
-print_path_note() {
-  if ! echo ":${PATH}:" | grep -q ":${LOCAL_BIN}:"; then
-    warn "${LOCAL_BIN} is not in your PATH."
-    echo "  Add it by running:"
-    echo "    echo 'export PATH=\"\${HOME}/.local/bin:\$PATH\"' >> ~/.bashrc"
-    echo "    source ~/.bashrc"
-  fi
-}
-
 usage() {
   cat <<'EOF'
 Usage: install.sh [OPTIONS]
@@ -162,29 +91,33 @@ Options:
   --global       Install assets and plugin globally (~/.config/opencode/)
   --project DIR  Install assets into a specific project directory (default: current directory)
   --source DIR   Use local clone as source instead of downloading
-  --skip-binary  Skip sdlc-tool binary installation
-  --skip-plugin  Skip plugin file installation
+  --upgrade      Overwrite existing config.json with new defaults (preserves custom values)
   -h, --help     Show this help message
 
-Default behavior: download the latest release, install sdlc-tool binary to
-~/.local/bin/, copy .opencode/ assets to the current project directory,
-and copy the plugin file to <project>/.opencode/plugins/.
+Default behavior: download the latest release, copy .opencode/ assets and
+the plugin to the current project directory.
+
+ConvergentCode is a pure TypeScript plugin — no binary installation needed.
+
+Upgrade: re-run install.sh to overwrite agents, commands, rules, skills,
+and the plugin with the latest versions. Your .sdlc/ state files and docs/
+are never modified. Use --upgrade to also update config.json.
+
+Uninstall: run uninstall.sh from this repository.
 EOF
 }
 
 GLOBAL=false
 PROJECT_DIR=""
 SOURCE_DIR=""
-SKIP_BINARY=false
-SKIP_PLUGIN=false
+UPGRADE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --global)       GLOBAL=true; shift ;;
     --project)      PROJECT_DIR="$2"; shift 2 ;;
     --source)       SOURCE_DIR="$2"; shift 2 ;;
-    --skip-binary)  SKIP_BINARY=true; shift ;;
-    --skip-plugin)  SKIP_PLUGIN=true; shift ;;
+    --upgrade)      UPGRADE=true; shift ;;
     -h|--help)      usage; exit 0 ;;
     *)              error "Unknown option: $1" ;;
   esac
@@ -203,28 +136,9 @@ if [ -z "$SOURCE_DIR" ]; then
     SOURCE_DIR="$DOWNLOADED_DIR"
     info "Using downloaded release assets"
   else
-    warn "Could not download release tarball. Installing binary only."
+    warn "Could not download release tarball."
     warn "For full install, use: ./install.sh --source /path/to/ConvergentCode"
   fi
-fi
-
-if [ "$SKIP_BINARY" = false ]; then
-  platform="$(detect_platform)"
-  if [ -n "$SOURCE_DIR" ] && [ -f "${SOURCE_DIR}/dist/sdlc-tool" ]; then
-    mkdir -p "$LOCAL_BIN"
-    cp "${SOURCE_DIR}/dist/sdlc-tool" "${LOCAL_BIN}/${BINARY_NAME}"
-    chmod +x "${LOCAL_BIN}/${BINARY_NAME}"
-    info "Installed sdlc-tool from local build to ${LOCAL_BIN}/${BINARY_NAME}"
-  elif [ -n "$SOURCE_DIR" ] && [ -d "${SOURCE_DIR}/sdlc-tool-binaries" ]; then
-    mkdir -p "$LOCAL_BIN"
-    cp "${SOURCE_DIR}/sdlc-tool-binaries/sdlc-tool-${platform}" "${LOCAL_BIN}/${BINARY_NAME}" 2>/dev/null && \
-      chmod +x "${LOCAL_BIN}/${BINARY_NAME}" && \
-      info "Installed sdlc-tool to ${LOCAL_BIN}/${BINARY_NAME}" || \
-      install_binary "$platform"
-  else
-    install_binary "$platform"
-  fi
-  print_path_note
 fi
 
 if [ "$GLOBAL" = true ]; then
@@ -235,25 +149,58 @@ fi
 
 if [ -n "$SOURCE_DIR" ]; then
   copy_assets "$opencode_dir" "$SOURCE_DIR"
-  copy_shell "$SOURCE_DIR" "$PROJECT_DIR"
   copy_templates "$SOURCE_DIR" "$PROJECT_DIR"
 fi
 
-if [ "$SKIP_PLUGIN" = false ]; then
-  plugin_src=""
-  if [ -n "$SOURCE_DIR" ] && [ -f "${SOURCE_DIR}/dist/convergentcode.js" ]; then
-    plugin_src="${SOURCE_DIR}/dist/convergentcode.js"
-  fi
+plugin_src=""
+if [ -n "$SOURCE_DIR" ] && [ -f "${SOURCE_DIR}/dist/convergentcode.js" ]; then
+  plugin_src="${SOURCE_DIR}/dist/convergentcode.js"
+fi
 
-  if [ -n "$plugin_src" ]; then
-    if [ "$GLOBAL" = true ]; then
-      copy_plugin "$plugin_src" "${CONFIG_DIR}/plugins"
-    else
-      copy_plugin "$plugin_src" "${PROJECT_DIR}/.opencode/plugins"
-    fi
+if [ -n "$plugin_src" ]; then
+  if [ "$GLOBAL" = true ]; then
+    copy_plugin "$plugin_src" "${CONFIG_DIR}/plugins"
   else
-    warn "Plugin file not found. Build it first with: bun run build"
-    warn "Then copy dist/convergentcode.js to .opencode/plugins/"
+    copy_plugin "$plugin_src" "${PROJECT_DIR}/.opencode/plugins"
+  fi
+else
+  warn "Plugin file not found. Build it first with: bun run build"
+  warn "Then copy dist/convergentcode.js to .opencode/plugins/"
+fi
+
+if [ "$UPGRADE" = true ] && [ "$GLOBAL" = false ]; then
+  CONFIG_DEST="${PROJECT_DIR}/.sdlc/config.json"
+  if [ -f "$CONFIG_DEST" ]; then
+    EXISTING_LANG=$(jq -r '.language // ""' "$CONFIG_DEST" 2>/dev/null || echo "")
+    EXISTING_CMD=$(jq -r '.test.command // ""' "$CONFIG_DEST" 2>/dev/null || echo "")
+    EXISTING_UNIT=$(jq -r '.test.unit // ""' "$CONFIG_DEST" 2>/dev/null || echo "")
+    EXISTING_PROP=$(jq -r '.test.property // ""' "$CONFIG_DEST" 2>/dev/null || echo "")
+    EXISTING_ACCEPT=$(jq -r '.test.acceptance // ""' "$CONFIG_DEST" 2>/dev/null || echo "")
+    EXISTING_LINT=$(jq -r '.test.lint // "true"' "$CONFIG_DEST" 2>/dev/null || echo "true")
+    EXISTING_BUILD=$(jq -r '.test.build // ""' "$CONFIG_DEST" 2>/dev/null || echo "")
+    EXISTING_EXTS=$(jq -c '.source_extensions // []' "$CONFIG_DEST" 2>/dev/null || echo "[]")
+    if [ -n "$SOURCE_DIR" ] && [ -f "${SOURCE_DIR}/templates/sdlc-config.json" ]; then
+      NEW_CONFIG=$(cat "${SOURCE_DIR}/templates/sdlc-config.json")
+    else
+      NEW_CONFIG=$(cat <<'CONFIGEOF'
+{"language":"","log_level":"minimal","stale_threshold":300,"source_extensions":["*.go","*.py","*.rs","*.ts","*.js"],"test":{"command":"","unit":"","property":"","acceptance":"","lint":"true","build":"","timeout":"120s"},"escape":{"L1":3,"L2":5,"L3":7,"L4":9},"loss_weights":{"acceptance":100,"unit":50,"property":50,"unimplemented":25,"expectations":15,"intents":10,"lint":5,"blocked":3,"spec_gaps":1},"constraints":{"max_lines":{"scaffold":120,"modify":50},"max_files":4,"diff_hash_window":8,"log_tail":{"worker":20,"orchestrator":50,"gate_reviewer":"current_phase"}}}
+CONFIGEOF
+      )
+    fi
+    MERGED=$(echo "$NEW_CONFIG" | jq --arg lang "$EXISTING_LANG" --arg cmd "$EXISTING_CMD" \
+      --arg unit "$EXISTING_UNIT" --arg prop "$EXISTING_PROP" --arg accept "$EXISTING_ACCEPT" \
+      --arg lint "$EXISTING_LINT" --arg build "$EXISTING_BUILD" --argjson exts "$EXISTING_EXTS" '
+      if $lang != "" then .language = $lang else . end |
+      if $cmd != "" then .test.command = $cmd else . end |
+      if $unit != "" then .test.unit = $unit else . end |
+      if $prop != "" then .test.property = $prop else . end |
+      if $accept != "" then .test.acceptance = $accept else . end |
+      if $lint != "true" then .test.lint = $lint else . end |
+      if $build != "" then .test.build = $build else . end |
+      if ($exts | length) > 0 then .source_extensions = $exts else . end
+    ')
+    echo "$MERGED" | jq '.' > "$CONFIG_DEST"
+    info "Upgraded config.json (preserved existing settings)"
   fi
 fi
 
@@ -267,6 +214,5 @@ info ""
 info "Next steps:"
 info "  1. Open your project in OpenCode"
 info "  2. Run /init-project to scaffold the .sdlc/ directory"
-info "  3. Run /run-phase 0 to start the SPECIFICATION phase"
-info ""
-info "Configuration: Edit .sdlc/config.json for test commands, escape thresholds, etc."
+info "  3. Edit .sdlc/config.json — set language, test.command, and test.build"
+info "  4. Run /run-phase 0 to start the SPECIFICATION phase"

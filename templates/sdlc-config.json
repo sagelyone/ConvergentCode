@@ -1,10 +1,15 @@
 {
+  "language": "",
+  "log_level": "minimal",
+  "stale_threshold": 300,
+  "source_extensions": ["*.go", "*.py", "*.rs", "*.ts", "*.js"],
   "test": {
-    "command": "go test",
-    "unit": "./...",
-    "property": "-run Prop ./...",
-    "acceptance": "-run Acceptance ./...",
+    "command": "",
+    "unit": "",
+    "property": "",
+    "acceptance": "",
     "lint": "true",
+    "build": "",
     "timeout": "120s"
   },
   "escape": {

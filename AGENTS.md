@@ -31,7 +31,6 @@ This repository is the ConvergentCode OpenCode plugin. It provides 7 specialized
 bun install
 bun run typecheck
 bun test
-cd sdlc-tool && go test ./...
 ```
 
 ## Framework Overview
@@ -55,6 +54,9 @@ Each phase has a gate that must clear before advancing. The loss function measur
 - **Escape early**: Repeated failures trigger escalating recovery, not endless retries
 - **Human at boundaries**: Humans specify (Phase 0) and confirm (Phase 6)
 - **Agents in between**: Phases 1-5 run autonomously
+- **Phase detection is automatic**: On startup, the Orchestrator reads .sdlc/state.md or infers from docs/
+- **Language is configurable**: Set `language` in `.sdlc/config.json` to adapt all commands
+- **Bug/feedback protocol uses todo.md**: Bugs and features are tracked with Type/Repro fields
 
 ## Architecture
 
@@ -66,10 +68,10 @@ OpenCode ←→ Plugin (dist/convergentcode.js)
          ┌────┴────┐
          ↓         ↓
     Agents     Tools
-    (7)        (11)
+    (7)        (12)
          ↓         ↓
-  State Files    Shell/Go
-  (.sdlc/)    (sdlc-tool/)
+   State Files   Pure TS
+   (.sdlc/)    (no externals)
 ```
 
 ### Plugin internals
@@ -79,7 +81,15 @@ src/
 ├── index.ts              # export default async (input) => Hooks
 ├── config.ts             # reads .sdlc/config.json
 ├── types.ts              # Zod v4 schemas + ConvergentConfig type
-├── tools/index.ts        # all 11 tool() definitions
+├── tools/
+│   ├── index.ts          # all 12 tool() definitions + re-exports
+│   ├── write-queue.ts    # in-process write serialization
+│   ├── file-utils.ts     # markdown read/write, regex helpers
+│   ├── loss-compute.ts   # composite loss from tests + state
+│   ├── state.ts          # stateWrite, todoUpdate, phaseAdvance, gateCheck
+│   ├── git.ts            # commitGreen, rollback
+│   ├── analysis.ts       # failureSig, diffHash, scenarioMatrix, assertionDensity
+│   └── logging.ts        # logEmit
 ├── hooks/index.ts        # tool.execute.before / after hooks
 └── features/
     └── init-project/

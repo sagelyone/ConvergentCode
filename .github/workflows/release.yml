@@ -20,20 +20,11 @@ jobs:
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
 
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22'
-
     - name: Install dependencies
       run: npm ci
 
-    - name: Run TypeScript tests
+    - name: Run tests
       run: npm run test
-
-    - name: Run Go tests
-      working-directory: ./sdlc-tool
-      run: go test ./...
 
     - name: Type check
       run: npm run typecheck
@@ -56,26 +47,11 @@ jobs:
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
 
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22'
-
     - name: Install dependencies
       run: npm ci
 
     - name: Build plugin bundle
       run: bun run build
-
-    - name: Cross-compile sdlc-tool binaries
-      working-directory: ./sdlc-tool
-      run: |
-        mkdir -p ../dist/sdlc-tool
-        GOOS=linux GOARCH=amd64 go build -o ../dist/sdlc-tool/sdlc-tool-linux-amd64 .
-        GOOS=linux GOARCH=arm64 go build -o ../dist/sdlc-tool/sdlc-tool-linux-arm64 .
-        GOOS=darwin GOARCH=amd64 go build -o ../dist/sdlc-tool/sdlc-tool-darwin-amd64 .
-        GOOS=darwin GOARCH=arm64 go build -o ../dist/sdlc-tool/sdlc-tool-darwin-arm64 .
-        GOOS=windows GOARCH=amd64 go build -o ../dist/sdlc-tool/sdlc-tool-windows-amd64.exe .
 
     - name: Build release tarball
       run: |
@@ -85,21 +61,16 @@ jobs:
 
         cp dist/convergentcode.js "$STAGING/"
         cp -r .opencode "$STAGING/.opencode"
-        cp -r shell "$STAGING/shell"
         cp -r templates "$STAGING/templates"
         cp install.sh "$STAGING/"
         cp README.md "$STAGING/"
         cp LICENSE "$STAGING/"
-        cp -r dist/sdlc-tool "$STAGING/sdlc-tool-binaries"
 
         tar czf "convergentcode-${VERSION}.tar.gz" "$STAGING"
         rm -rf "$STAGING"
 
     - name: Generate checksums
-      run: |
-        sha256sum convergentcode-*.tar.gz > checksums.txt
-        cd dist/sdlc-tool
-        sha256sum sdlc-tool-* >> ../../checksums.txt
+      run: sha256sum convergentcode-*.tar.gz > checksums.txt
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -107,7 +78,6 @@ jobs:
         files: |
           convergentcode-*.tar.gz
           checksums.txt
-          dist/sdlc-tool/sdlc-tool-*
         generate_release_notes: true
         draft: false
         prerelease: false

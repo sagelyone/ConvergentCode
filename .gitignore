@@ -43,9 +43,5 @@ temp/
 # SDLC state directory (created by /init-project)
 .sdlc/
 
-# Go binaries (built)
-sdlc-tool/sdlc-tool-*
-!sdlc-tool/*.go
-
 # GitHub Actions (if using act for local testing)
 .secrets

@@ -37,20 +37,22 @@ Common issues and their solutions.
 **Symptom:** `loss_compute` returns errors
 
 **Check:**
-1. Test command exists and works:
-   ```bash
-   go test ./...
-   ```
+1. Test command is configured and works (use your project's test runner):
+    ```bash
+    go test ./...      # Go
+    pytest              # Python
+    bun test            # TypeScript
+    ```
 
 2. Config has test settings:
-   ```jsonc
-   {
-     "test": {
-       "command": "go test",
-       "unit": "./..."
-     }
-   }
-   ```
+    ```jsonc
+    {
+      "test": {
+        "command": "go test",  // or "pytest", "bun test", etc.
+        "unit": "./..."        // or "tests/unit", "src/**/*.test.ts", etc.
+      }
+    }
+    ```
 
 ### Escape protocol not triggering
 
@@ -111,7 +113,7 @@ Common issues and their solutions.
 
 ### Tests not found
 
-**Symptom:** `go test` says no test files
+**Symptom:** Test runner says no test files
 
 **Check:**
 1. Test files have correct suffix:
@@ -119,10 +121,15 @@ Common issues and their solutions.
    - TypeScript: `*.test.ts`
    - Python: `test_*.py`
 
-2. Test command has correct pattern:
-   ```jsonc
-   { "test": { "unit": "./..." } }
-   ```
+2. Test command has correct pattern for your language:
+    ```jsonc
+    // Go
+    { "test": { "unit": "./..." } }
+    // Python
+    { "test": { "unit": "tests/unit" } }
+    // TypeScript
+    { "test": { "unit": "src/**/*.test.ts" } }
+    ```
 
 ### Property tests failing
 
@@ -241,11 +248,7 @@ Increase L1 threshold:
    - Max 3 concurrent APIT workers
    - Consider sequential execution for debugging
 
-2. Verify flock is working:
-   ```bash
-   # On Linux
-   lsof .sdlc/state.md
-   ```
+2. The plugin uses in-process write serialization — state writes are queued sequentially. If running multiple OpenCode instances against the same project, state files may conflict. Run one instance at a time per project.
 
 ## Git Issues
 

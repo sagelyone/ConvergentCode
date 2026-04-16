@@ -24,7 +24,7 @@ If no phase number provided, uses current phase from state.md.
 ## Concurrency
 
 - Max 3 concurrent APIT Worker sessions
-- File locking via flock on state files
+- Sequential write queue for state file updates
 - Atomic state updates
 
 ## Output

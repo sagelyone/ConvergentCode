@@ -36,17 +36,7 @@ try {
 }
 
 console.log("")
-console.log("3. Building Go binary (sdlc-tool) for current platform...")
-try {
-  execSync("cd sdlc-tool && go build -o ../dist/sdlc-tool .", { stdio: "pipe" })
-  console.log("  ✓ sdlc-tool built for current platform")
-} catch {
-  console.log("  ⚠ Go build skipped (Go not installed or build failed)")
-  console.log("     Run: cd sdlc-tool && go build -o ~/.local/bin/sdlc-tool .")
-}
-
-console.log("")
-console.log("4. Copying declarative assets to dist/...")
+console.log("3. Copying declarative assets to dist/...")
 
 const assetDirs = ["agents", "commands", "rules", "skills"]
 for (const dir of assetDirs) {
@@ -59,11 +49,9 @@ for (const dir of assetDirs) {
   }
 }
 
-for (const dir of ["shell", "templates"]) {
-  if (existsSync(dir)) {
-    cpSync(dir, `dist/${dir}`, { recursive: true })
-    console.log(`  ✓ ${dir}/`)
-  }
+if (existsSync("templates")) {
+  cpSync("templates", "dist/templates", { recursive: true })
+  console.log("  ✓ templates/")
 }
 
 console.log("")
@@ -71,7 +59,5 @@ console.log("✅ Build complete!")
 console.log("")
 console.log("Output in ./dist/:")
 console.log("  convergentcode.js  → copy to .opencode/plugins/")
-console.log("  sdlc-tool          → copy to ~/.local/bin/")
 console.log("  .opencode/         → merge into project's .opencode/")
-console.log("  shell/             → copy to project root")
 console.log("  templates/         → used by /init-project")

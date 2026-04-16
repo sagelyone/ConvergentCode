@@ -1,50 +1,20 @@
 import { tool } from "@opencode-ai/plugin"
-import { spawn } from "child_process"
-import { resolve } from "path"
-import { readFile, appendFile } from "fs/promises"
-import { createHash } from "crypto"
+import { computeLoss } from "./loss-compute.js"
+import { stateWriteCore, todoUpdateCore, gateCheckCore, phaseAdvanceCore } from "./state.js"
+import { commitGreenCore, rollbackCore } from "./git.js"
+import { failureSigCore, diffHashCore, scenarioMatrixCore, assertionDensityCore } from "./analysis.js"
+import { logEmitCore } from "./logging.js"
 
 const z = tool.schema
-
-async function findSdlcTool(): Promise<string> {
-  const home = process.env.HOME || process.env.USERPROFILE || ""
-  const fullPath = resolve(home, ".local/bin/sdlc-tool")
-  try {
-    const { access } = await import("fs/promises")
-    await access(fullPath)
-    return fullPath
-  } catch {
-    return "sdlc-tool"
-  }
-}
-
-function runCommand(cmd: string, args: string[], cwd: string): Promise<string> {
-  return new Promise((res, rej) => {
-    const proc = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"] })
-    let stdout = ""
-    let stderr = ""
-    proc.stdout.on("data", (d: Buffer) => { stdout += d.toString() })
-    proc.stderr.on("data", (d: Buffer) => { stderr += d.toString() })
-    proc.on("close", (code) => {
-      if (code === 0) res(stdout.trim())
-      else rej(new Error(`Command failed (exit ${code}): ${stderr.trim() || stdout.trim()}`))
-    })
-    proc.on("error", rej)
-  })
-}
-
-function shellPath(projectDir: string, name: string): string {
-  return resolve(projectDir, "shell", name)
-}
 
 export const lossCompute = tool({
   description: "Compute composite loss from test results and state files",
   args: {},
   execute: async (_args, ctx) => {
     try {
-      const result = await runCommand("bash", [shellPath(ctx.directory, "loss-compute.sh")], ctx.directory)
-      return result
-    } catch {
+      const result = await computeLoss(ctx.directory)
+      return JSON.stringify(result)
+    } catch (err) {
       return JSON.stringify({
         total: 0, delta: 0,
         components: {
@@ -65,18 +35,12 @@ export const failureSig = tool({
   },
   execute: async ({ test_id, error_output }, ctx) => {
     try {
-      const result = await runCommand("bash", [shellPath(ctx.directory, "failure-sig.sh"), test_id, error_output], ctx.directory)
-      return result
+      const result = await failureSigCore(ctx.directory, test_id, error_output)
+      return JSON.stringify(result)
     } catch {
       const firstErr = error_output.split("\n")[0]
-      const sig = createHash("sha256").update(`${test_id}:${firstErr}`).digest("hex").slice(0, 12)
-      let count = 0
-      try {
-        const todo = await readFile(resolve(ctx.directory, ".sdlc/todo.md"), "utf-8")
-        const matches = todo.match(new RegExp(sig, "g"))
-        if (matches) count = matches.length
-      } catch { /* empty */ }
-      return JSON.stringify({ signature: sig, repeat_count: count })
+      const sig = firstErr.slice(0, 12)
+      return JSON.stringify({ signature: sig, repeat_count: 0 })
     }
   },
 })
@@ -86,8 +50,8 @@ export const diffHash = tool({
   args: {},
   execute: async (_args, ctx) => {
     try {
-      const result = await runCommand("bash", [shellPath(ctx.directory, "diff-hash.sh")], ctx.directory)
-      return result
+      const result = await diffHashCore(ctx.directory)
+      return JSON.stringify(result)
     } catch {
       return JSON.stringify({ hash: "unknown", collision: false })
     }
@@ -100,10 +64,8 @@ export const stateWrite = tool({
     update_json: z.string().describe("JSON string of state updates"),
   },
   execute: async ({ update_json }, ctx) => {
-    const bin = await findSdlcTool()
     try {
-      const result = await runCommand(bin, ["state-write", update_json], ctx.directory)
-      return result || "State updated"
+      return await stateWriteCore(ctx.directory, update_json)
     } catch (err) {
       return `Error updating state: ${err instanceof Error ? err.message : String(err)}`
     }
@@ -118,12 +80,8 @@ export const todoUpdate = tool({
     test_result: z.string().optional().describe("PASS|FAIL (required for complete)"),
   },
   execute: async ({ action, task_id, test_result }, ctx) => {
-    const bin = await findSdlcTool()
-    const args = ["todo-update", action, task_id]
-    if (test_result) args.push("--test-result", test_result)
     try {
-      const result = await runCommand(bin, args, ctx.directory)
-      return result || "Todo updated"
+      return await todoUpdateCore(ctx.directory, action, task_id, test_result)
     } catch (err) {
       return `Error updating todo: ${err instanceof Error ? err.message : String(err)}`
     }
@@ -138,21 +96,9 @@ export const logEmit = tool({
   },
   execute: async ({ event, payload }, ctx) => {
     try {
-      const result = await runCommand("bash", [shellPath(ctx.directory, "log-emit.sh"), event, payload ?? "{}"], ctx.directory)
-      return result || "Log entry emitted"
-    } catch {
-      const logPath = resolve(ctx.directory, ".sdlc/agent.log")
-      const entry = JSON.stringify({
-        ts: new Date().toISOString(),
-        event,
-        payload: payload ? JSON.parse(payload) : {},
-      })
-      try {
-        await appendFile(logPath, entry + "\n")
-        return "Log entry emitted"
-      } catch (err) {
-        return `Error emitting log: ${err instanceof Error ? err.message : String(err)}`
-      }
+      return await logEmitCore(ctx.directory, event, payload)
+    } catch (err) {
+      return `Error emitting log: ${err instanceof Error ? err.message : String(err)}`
     }
   },
 })
@@ -162,8 +108,8 @@ export const gateCheck = tool({
   args: {},
   execute: async (_args, ctx) => {
     try {
-      const result = await runCommand("bash", [shellPath(ctx.directory, "gate-check.sh")], ctx.directory)
-      return result
+      const result = await gateCheckCore(ctx.directory)
+      return JSON.stringify(result)
     } catch {
       return JSON.stringify({ cleared: false, checked: 0, total: 0, unresolved_gaps: 0 })
     }
@@ -174,10 +120,8 @@ export const phaseAdvance = tool({
   description: "Advance to next phase atomically",
   args: {},
   execute: async (_args, ctx) => {
-    const bin = await findSdlcTool()
     try {
-      const result = await runCommand(bin, ["phase-advance"], ctx.directory)
-      return result || "Phase advanced"
+      return await phaseAdvanceCore(ctx.directory)
     } catch (err) {
       return `Error advancing phase: ${err instanceof Error ? err.message : String(err)}`
     }
@@ -191,10 +135,8 @@ export const commitGreen = tool({
     message: z.string().describe("Commit message"),
   },
   execute: async ({ task_id, message }, ctx) => {
-    const bin = await findSdlcTool()
     try {
-      const result = await runCommand(bin, ["commit-green", task_id, message], ctx.directory)
-      return result || "Committed"
+      return await commitGreenCore(ctx.directory, task_id, message)
     } catch (err) {
       return `Error committing: ${err instanceof Error ? err.message : String(err)}`
     }
@@ -207,12 +149,8 @@ export const rollback = tool({
     to_task: z.string().optional().describe("Revert to specific task commit"),
   },
   execute: async ({ to_task }, ctx) => {
-    const bin = await findSdlcTool()
-    const args = ["rollback"]
-    if (to_task) args.push("--to-task", to_task)
     try {
-      const result = await runCommand(bin, args, ctx.directory)
-      return result || "Rolled back"
+      return await rollbackCore(ctx.directory, to_task)
     } catch (err) {
       return `Error rolling back: ${err instanceof Error ? err.message : String(err)}`
     }
@@ -223,12 +161,22 @@ export const scenarioMatrix = tool({
   description: "Enumerate uncovered scenario cells from spec.md",
   args: {},
   execute: async (_args, ctx) => {
-    const bin = await findSdlcTool()
     try {
-      const result = await runCommand(bin, ["scenario-matrix"], ctx.directory)
-      return result || "No scenarios found"
+      return await scenarioMatrixCore(ctx.directory)
     } catch (err) {
       return `Error computing scenario matrix: ${err instanceof Error ? err.message : String(err)}`
+    }
+  },
+})
+
+export const assertionDensity = tool({
+  description: "Compute assertion density across source files",
+  args: {},
+  execute: async (_args, ctx) => {
+    try {
+      return await assertionDensityCore(ctx.directory)
+    } catch (err) {
+      return `Error computing assertion density: ${err instanceof Error ? err.message : String(err)}`
     }
   },
 })
@@ -245,4 +193,5 @@ export const allTools = {
   commit_green: commitGreen,
   rollback: rollback,
   scenario_matrix: scenarioMatrix,
+  assertion_density: assertionDensity,
 }

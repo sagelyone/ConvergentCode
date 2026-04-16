@@ -12,15 +12,11 @@ cd ConvergentCode
 # Install dependencies
 bun install
 
-# Build the Go binary
-cd sdlc-tool && go build -o sdlc-tool . && cd ..
-
 # Run type check
 bun run typecheck
 
 # Run tests
 bun test
-cd sdlc-tool && go test ./...
 ```
 
 ## Project Structure
@@ -32,7 +28,14 @@ cd sdlc-tool && go test ./...
 │   ├── config.ts      # .sdlc/config.json reader
 │   ├── types.ts       # Zod v4 schemas + shared types
 │   ├── tools/
-│   │   └── index.ts   # All 11 tool definitions
+│   │   ├── index.ts          # Tool definitions + re-exports
+│   │   ├── write-queue.ts    # In-process write serialization
+│   │   ├── file-utils.ts     # Markdown read/write, regex helpers
+│   │   ├── loss-compute.ts   # Composite loss from tests + state
+│   │   ├── state.ts          # stateWrite, todoUpdate, phaseAdvance, gateCheck
+│   │   ├── git.ts            # commitGreen, rollback
+│   │   ├── analysis.ts       # failureSig, diffHash, scenarioMatrix, assertionDensity
+│   │   └── logging.ts        # logEmit
 │   ├── hooks/
 │   │   └── index.ts   # Lifecycle hooks
 │   └── features/
@@ -43,8 +46,6 @@ cd sdlc-tool && go test ./...
 │   ├── commands/      # Command definitions
 │   ├── skills/        # Skills
 │   └── rules/         # Invariant rules
-├── sdlc-tool/         # Go binary
-├── shell/             # Bash tools
 ├── templates/         # State file templates
 ├── tests/
 │   └── integration/   # Integration tests
@@ -56,11 +57,10 @@ cd sdlc-tool && go test ./...
 
 ### Adding a new tool
 
-1. Add tool definition in `src/tools/index.ts` using the `tool()` helper from `@opencode-ai/plugin`
-2. Add shell script in `shell/<tool-name>.sh` (if needed)
-3. Add Go subcommand in `sdlc-tool/` (if needed)
-4. Write test
-5. Update documentation
+1. Add tool implementation in `src/tools/<category>.ts`
+2. Add tool definition in `src/tools/index.ts` using the `tool()` helper from `@opencode-ai/plugin`
+3. Write test
+4. Update documentation
 
 ### Adding a new agent
 
@@ -79,11 +79,7 @@ cd sdlc-tool && go test ./...
 ### Unit Tests
 
 ```bash
-# TypeScript
 bun test
-
-# Go
-cd sdlc-tool && go test ./...
 ```
 
 ### Integration Tests
@@ -101,8 +97,7 @@ bun test tests/integration/
 ## Code Style
 
 - **TypeScript**: Use strict mode, no implicit any
-- **Go**: Follow standard Go conventions (gofmt)
-- **Bash**: Use `set -euo pipefail`
+- No comments unless explicitly requested
 
 ## Commit Messages
 
@@ -110,7 +105,7 @@ Follow conventional commits:
 
 ```
 feat: add new scenario-matrix tool
-fix: correct loss computation for Go projects
+fix: correct loss computation for edge cases
 docs: update quickstart guide
 refactor: simplify state file parsing
 test: add integration test for escape protocol
@@ -139,9 +134,9 @@ Maintainers only:
 git tag -a v0.0.2 -m "Release v0.0.2"
 git push origin v0.0.2
 
-# Minor release (0.1.0 -> 0.2.0)
-git tag -a v0.2.0 -m "Release v0.2.0"
-git push origin v0.2.0
+# Minor release (0.3.0 -> 0.4.0)
+git tag -a v0.4.0 -m "Release v0.4.0"
+git push origin v0.4.0
 
 # Major release (0.x.x -> 1.0.0)
 git tag -a v1.0.0 -m "Release v1.0.0"
@@ -149,9 +144,8 @@ git push origin v1.0.0
 ```
 
 GitHub Actions will automatically:
-- Build cross-platform Go binaries
-- Create a GitHub Release with `.tar.gz` bundle
-- Attach binaries, checksums, and plugin assets
+- Build the TypeScript plugin bundle
+- Create a GitHub Release with `.tar.gz` bundle and checksums
 
 ## Questions?
 

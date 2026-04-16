@@ -1,6 +1,6 @@
 {
   "name": "convergentcode",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "ConvergentCode - Convergence-driven autonomous development harness for OpenCode",
   "license": "MIT",
   "author": "sagelyone <275394216+sagelyone@users.noreply.github.com>",
@@ -32,9 +32,7 @@
     "build": "npx tsx script/build.ts",
     "typecheck": "tsc --noEmit",
     "test": "npx tsx --test tests/integration/plugin.test.ts",
-    "test:go": "cd sdlc-tool && go test ./...",
-    "test:integration": "npx tsx --test tests/integration/",
-    "test:all": "npm run test && npm run test:go && npm run test:integration"
+    "test:integration": "npx tsx --test tests/integration/"
   },
   "dependencies": {
     "zod": "^4.3.6"
@@ -48,12 +46,8 @@
   "files": [
     "dist/",
     ".opencode/",
-    "shell/",
     "templates/",
     "docs/",
-    "install.sh",
-    "sdlc-tool/*.go",
-    "sdlc-tool/go.mod",
-    "sdlc-tool/go.sum"
+    "install.sh"
   ]
 }
